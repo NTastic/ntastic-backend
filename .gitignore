@@ -1,0 +1,60 @@
+# Node.js 依赖
+node_modules/
+package-lock.json
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 环境变量文件
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# 临时文件
+tmp/
+temp/
+
+# 缓存文件
+.cache/
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 编辑器或 IDE 生成的配置文件
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# 覆盖率报告
+coverage/
+
+# 生成的文档
+docs/
+
+# 锁文件（根据您的包管理器选择性忽略）
+# 如果使用 npm，忽略 package-lock.json
+package-lock.json
+
+# 如果使用 yarn，忽略 yarn.lock
+yarn.lock
+
+# 如果使用 pnpm，忽略 pnpm-lock.yaml
+pnpm-lock.yaml
+
+# 生产环境构建
+build/
+dist/
+
+# 数据库文件（如果有）
+*.sqlite
+*.sqlite3
