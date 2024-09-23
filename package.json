@@ -1,0 +1,19 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "NTastic backend",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/NTastic/ntastic-backend.git"
+  },
+  "author": "Randy",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/NTastic/ntastic-backend/issues"
+  },
+  "homepage": "https://github.com/NTastic/ntastic-backend#readme"
+}
