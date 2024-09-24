@@ -53,12 +53,22 @@ const typeDefs = gql`
     downvotes: Int!
   }
 
+  enum TargetType {
+    Question
+    Answer
+  }
+
+  enum VoteType {
+    upvote
+    downvote
+  }
+
   type Vote {
     id: ID!
     user: User!
     targetId: ID!
-    targetType: String!
-    voteType: String!
+    targetType: TargetType!,
+    voteType: VoteType!
     createdAt: Date!
   }
 
