@@ -8,15 +8,18 @@ const jwt = require('jsonwebtoken');
 const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const morgan = require('morgan');
+const DataLoader = require('dataloader');
 
 const typeDefs = require('./schema/typeDefs');
 const resolvers = require('./resolvers');
 
 const SECRET_KEY = process.env.SECRET_KEY;
 const MONGODB_URI = process.env.MONGODB_URI;
-const PORT = process.env.PORT || 4000;
+const PORT = parseInt(process.env.PORT, 10) || 4000;
 const ENABLE_INTROSPECTION = process.env.ENABLE_INTROSPECTION === 'true';
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [`http://localhost:3000`];
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 if (!SECRET_KEY) {
   throw new Error('SECRET_KEY is not defined in environment variables');
@@ -28,23 +31,56 @@ if (!MONGODB_URI) {
 
 const app = express();
 
-// Security middlewares
-// app.use(helmet());
+
 app.use(cors({
   origin: ALLOWED_ORIGINS,
   credentials: true,
 }));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10000, // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+// log
+if (IS_PRODUCTION) {
+  app.use(morgan('combined'))
+  // Security middlewares
+  app.use(helmet())
+
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 2000, // limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again after 15 minutes',
+  });
+  app.use(limiter);
+} else {
+  app.use(morgan('dev'));
+}
+
+// prevent large file request attack
+app.use(express.json({ limit: '10kb' }));
 
 // connect to MongoDB
-mongoose.connect(MONGODB_URI);
-mongoose.connection.once('open', () => {
+mongoose.connect(MONGODB_URI).then(() => {
   console.log('MongoDB connected');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+});
+
+// create dataloaders
+const createLoaders = () => ({
+  userLoader: new DataLoader(async (userIds) => {
+    const users = await User.find({ _id: { $in: userIds } });
+    return userIds.map(id => users.find(user => user.id === id.toString()));
+  }),
+  tagLoader: new DataLoader(async (tagIds) => {
+    const tags = await Tag.find({ _id: { $in: tagIds } });
+    return tagIds.map(id => tags.find(tag => tag.id === id.toString()));
+  }),
+  questionLoader: new DataLoader(async (questionIds) => {
+    const questions = await Question.find({ _id: { $in: questionIds } });
+    return questionIds.map(id => questions.find(q => q.id === id.toString()));
+  }),
+  answerLoader: new DataLoader(async (answerIds) => {
+    const answers = await Answer.find({ _id: { $in: answerIds } });
+    return answerIds.map(id => answers.find(a => a.id === id.toString()));
+  }),
 });
 
 // Apollo Server config
@@ -75,12 +111,6 @@ const server = new ApolloServer({
 (async () => {
   await server.start();
   server.applyMiddleware({ app });
-  
-  // global error handle
-  app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
-  });
 
   app.listen({ port: PORT }, () =>
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
