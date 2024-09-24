@@ -5,9 +5,8 @@ const TagSchema = new mongoose.Schema({
   slug: { type: String, required: true, unique: true },
   description: { type: String },
   synonyms: [{ type: String }],
-  createdAt: { type: Date, default: Date.now },
-  updatedAt: { type: Date, default: Date.now },
-});
+  parentTagId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tag' },
+}, { timestamps: true });
 
 TagSchema.index({ slug: 1 }, { unique: true });
 

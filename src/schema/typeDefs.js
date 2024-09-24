@@ -9,7 +9,7 @@ const typeDefs = gql`
     username: String!
     email: String!
     createdAt: Date!
-    updatedAt: Date!
+    updatedAt: Date
     questions: [Question]
     answers: [Answer]
   }
@@ -22,7 +22,7 @@ const typeDefs = gql`
     synonyms: [String]
     parentTag: Tag
     createdAt: Date!
-    updatedAt: Date!
+    updatedAt: Date
     questions: [Question]
   }
 
@@ -33,7 +33,7 @@ const typeDefs = gql`
     author: User!
     tags: [Tag!]!
     createdAt: Date!
-    updatedAt: Date!
+    updatedAt: Date
     votes: VoteCount!
     answers: [Answer]
   }
@@ -44,7 +44,7 @@ const typeDefs = gql`
     author: User!
     question: Question!
     createdAt: Date!
-    updatedAt: Date!
+    updatedAt: Date
     votes: VoteCount!
   }
 
@@ -60,6 +60,11 @@ const typeDefs = gql`
     targetType: String!
     voteType: String!
     createdAt: Date!
+  }
+
+  type AuthPayload {
+    token: String!
+    user: User!
   }
 
   type Query {
@@ -79,8 +84,8 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    register(username: String!, email: String!, password: String!): User
-    login(email: String!, password: String!): String # JWT token
+    register(username: String!, email: String!, password: String!): AuthPayload
+    login(email: String!, password: String!): AuthPayload
 
     createTag(
       name: String!,
