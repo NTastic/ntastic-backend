@@ -39,7 +39,7 @@ const resolvers = {
       return await Question.find({ tagIds: tagId });
     },
 
-    // get quesiton
+    // get question
     getQuestion: async (_, { id }) => {
       return await Question.findById(id);
     },
@@ -58,7 +58,7 @@ const resolvers = {
 
   Mutation: {
     // register user
-    register: async (_, { username, email, password }) => {
+    register: async (_, { username, email, password }, { SECRET_KEY }) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) throw new Error('Email already registered');
 
@@ -68,22 +68,32 @@ const resolvers = {
         email,
         password: hashedPassword,
       });
-      return await user.save();
+      // save to database
+      const res = await user.save();
+      // Optionally, generate a JWT token here
+      const token = jwt.sign({ userId: res.id }, SECRET_KEY, { expiresIn: '1d' });
+      return {
+        token,
+        user: res,
+      };
     },
 
     // user login
     login: async (_, { email, password }, { SECRET_KEY }) => {
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).select('+password');
       if (!user) throw new Error('User not found');
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) throw new Error('Incorrect password');
       const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1d' });
-      return token;
+      return {
+        token,
+        user,
+      };
     },
 
     // create tag
     createTag: async (_, { name, description, synonyms, parentTagId }) => {
-      const formattedName = name.trime();
+      const formattedName = name.trim();
       const slug = formattedName.toLowerCase().replace(/\s+/g, '-');
 
       const existingTag = await Tag.findOne({ slug });
@@ -125,7 +135,7 @@ const resolvers = {
         const sourceTag = await Tag.findById(sourceTagId);
         if (!sourceTag) continue;
 
-        // update related quesitons
+        // update related questions
         await Question.updateMany(
           { tagIds: sourceTagId },
           { $addToSet: { tagIds: targetTagId }, $pull: { tagIds: sourceTagId } }
@@ -169,7 +179,7 @@ const resolvers = {
       return await question.save();
     },
 
-    addTagsToQuestion: async (_, { quesitonId, tagIds }) => {
+    addTagsToQuestion: async (_, { questionId, tagIds }) => {
       const question = await Question.findById(questionId);
       if (!question) throw new Error('Question not found');
 
@@ -205,7 +215,7 @@ const resolvers = {
       }
 
       const Model = targetType === 'Question' ? Question : Answer;
-      const target = await Model.findById(targetid);
+      const target = await Model.findById(targetId);
       if (!target) throw new Error(`${targetType} not found`);
 
       const existingVote = await Vote.findOne({ userId, targetId });
@@ -286,7 +296,7 @@ const resolvers = {
   },
 
   Question: {
-    author: async (quesiton) => {
+    author: async (question) => {
       return await User.findById(question.authorId);
     },
     tags: async (question) => {
