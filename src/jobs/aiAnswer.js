@@ -20,7 +20,7 @@ const aiAnswerQueue = new Bull('ai-answer-queue', {
 
 const openai = new OpenAI();
 
-const SYSTEM_CONTENT = "Note:\n1. Please answer the question in English. \n2. The scope of the question is limited to things in Darwin or other region in Northern Territory, Australia.\n3. Answer it like you are the topic related forum user.";
+const SYSTEM_CONTENT = process.env.OPENAI_SYSTEM_PROMPT || "No more than 100 words for each response.";
 
 aiAnswerQueue.process(async (job) => {
   const { questionId } = job.data;
@@ -37,7 +37,7 @@ aiAnswerQueue.process(async (job) => {
 
   const messages = [
     { role: 'system', content: SYSTEM_CONTENT },
-    { role: 'user', content: `Please reply this:${question.content}` },
+    { role: 'user', content: `${question.content}` },
   ];
 
   try {
