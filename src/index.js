@@ -100,7 +100,7 @@ const server = new ApolloServer({
 
     if (token) {
       try {
-        const decoded = jwt.verify(token, SECRET_KEY);
+        const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
         userId = decoded.userId;
       } catch (err) {
         console.warn('Invalid token');
