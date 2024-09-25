@@ -8,12 +8,11 @@ const helmet = require('helmet');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
-const DataLoader = require('dataloader');
 const dotenvFlow = require('dotenv-flow');
-const path = require('path');
 
 const typeDefs = require('./schema/typeDefs');
 const resolvers = require('./resolvers');
+const aiAnswerQueue = require('./jobs/aiAnswer');
 
 dotenvFlow.config();
 const {
@@ -65,26 +64,6 @@ mongoose.connect(MONGODB_URI).then(() => {
   console.log('MongoDB connected');
 }).catch(err => {
   console.error('MongoDB connection error:', err);
-});
-
-// create dataloaders
-const createLoaders = () => ({
-  userLoader: new DataLoader(async (userIds) => {
-    const users = await User.find({ _id: { $in: userIds } });
-    return userIds.map(id => users.find(user => user.id === id.toString()));
-  }),
-  tagLoader: new DataLoader(async (tagIds) => {
-    const tags = await Tag.find({ _id: { $in: tagIds } });
-    return tagIds.map(id => tags.find(tag => tag.id === id.toString()));
-  }),
-  questionLoader: new DataLoader(async (questionIds) => {
-    const questions = await Question.find({ _id: { $in: questionIds } });
-    return questionIds.map(id => questions.find(q => q.id === id.toString()));
-  }),
-  answerLoader: new DataLoader(async (answerIds) => {
-    const answers = await Answer.find({ _id: { $in: answerIds } });
-    return answerIds.map(id => answers.find(a => a.id === id.toString()));
-  }),
 });
 
 // Apollo Server config

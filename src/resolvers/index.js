@@ -5,8 +5,12 @@ const Tag = require('../models/Tag');
 const Question = require('../models/Question');
 const Answer = require('../models/Answer');
 const Vote = require('../models/Vote');
+const aiAnswerQueue = require('../jobs/aiAnswer');
 
 const { DateTimeResolver } = require('graphql-scalars');
+
+const JOB_ATTEMPTS=3;
+const JOB_BACKOFF=5000;
 
 const resolvers = {
   Date: DateTimeResolver,
@@ -82,6 +86,10 @@ const resolvers = {
     login: async (_, { email, password }, { SECRET_KEY }) => {
       const user = await User.findOne({ email }).select('+password');
       if (!user) throw new Error('User not found');
+      if (user.isBot) {
+        console.warn(`Bot ${email} try to login`);
+        throw new Error('Cannot login as robot');
+      }
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) throw new Error('Incorrect password');
       const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1d' });
@@ -176,7 +184,15 @@ const resolvers = {
         tagIds,
       });
 
-      return await question.save();
+      const savedQuestion = await question.save();
+
+      // add to ai answer queue
+      await aiAnswerQueue.add({ questionId: savedQuestion._id }, {
+        attempts: JOB_ATTEMPTS,
+        backoff: JOB_BACKOFF,
+      });
+
+      return savedQuestion;
     },
 
     addTagsToQuestion: async (_, { questionId, tagIds }) => {
