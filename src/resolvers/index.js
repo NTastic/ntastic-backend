@@ -218,43 +218,30 @@ const resolvers = {
       const target = await Model.findById(targetId);
       if (!target) throw new Error(`${targetType} not found`);
 
-      const session = await mongoose.startSession();
-      session.startTransaction();
       try {
-        const existingVote = await Vote.findOne({ userId, targetId }).session(session);
+        const existingVote = await Vote.findOne({ userId, targetId });
 
         if (existingVote) {
           if (existingVote.voteType === voteType) {
-            await session.commitTransaction();
-            session.endSession();
             return {
               success: false,
               message: `You have already ${voteType}d this ${targetType.toLowerCase()}`,
               voteCount: target.votes,
             };
           } else {
-            // update vote type
-            existingVote.voteType = voteType;
-            await existingVote.save({ session });
-
-            // update target votes
-            if (voteType === 'upvote') {
-              target.votes.upvotes += 1;
-              target.votes.downvotes = Math.max(target.votes.downvotes - 1, 0);
-            } else {
-              target.votes.upvotes -= 1;
-              target.votes.downvotes = Math.max(target.votes.upvotes - 1, 0);
-            }
-
-            await target.save({ session });
-
-            await session.commitTransaction();
-            session.endSession();
+            const increment = voteType === 'upvote' ? { upvotes: 1, downvotes: -1 } : { upvotes: -1, downvotes: 1 };
+            // update vote type and count
+            await Vote.findByIdAndUpdate(existingVote._id, { voteType }, { new: true });
+            const updatedTarget = await Model.findByIdAndUpdate(
+              targetId,
+              { $inc: increment },
+              { new: true }
+            );
 
             return {
               success: true,
               message: 'Vote updated',
-              voteCount: target.votes,
+              voteCount: updatedTarget.votes,
             };
           }
         } else {
@@ -265,28 +252,24 @@ const resolvers = {
             targetType,
             voteType,
           });
-          await vote.save({ session });
+          await vote.save();
 
           // update target votes
-          if (voteType === 'upvote') {
-            target.votes.upvotes += 1;
-          } else {
-            target.votes.downvotes += 1;
-          }
+          const increment = voteType === 'upvote' ? { upvotes: 1 } : { downvotes: 1 };
+          const updatedTarget = await Model.findByIdAndUpdate(
+            targetId,
+            { $inc: increment },
+            { new: true }
+          );
 
-          await target.save({ session });
-
-          await session.commitTransaction();
-          session.endSession();
           return {
             success: true,
             message: 'Vote recorded',
-            voteCount: target.votes,
+            voteCount: updatedTarget.votes,
           };
         }
       } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        console.error("Vote mutation error:", error);
         throw new Error('Failed to process vote');
       }
     },

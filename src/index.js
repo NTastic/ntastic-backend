@@ -1,6 +1,5 @@
 const moduleAlias = require('module-alias');
 moduleAlias.addAlias('punycode', 'punycode/');
-require('dotenv').config();
 const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const mongoose = require('mongoose');
@@ -10,16 +9,21 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const DataLoader = require('dataloader');
+const dotenvFlow = require('dotenv-flow');
+const path = require('path');
 
 const typeDefs = require('./schema/typeDefs');
 const resolvers = require('./resolvers');
 
-const SECRET_KEY = process.env.SECRET_KEY;
-const MONGODB_URI = process.env.MONGODB_URI;
-const PORT = parseInt(process.env.PORT, 10) || 4000;
-const ENABLE_INTROSPECTION = process.env.ENABLE_INTROSPECTION === 'true';
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [`http://localhost:3000`];
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+dotenvFlow.config();
+const {
+  SECRET_KEY,
+  MONGODB_URI,
+  PORT = 4000,
+  ENABLE_INTROSPECTION = false,
+  ALLOWED_ORIGINS = "http://localhost:3000",
+  IS_PRODUCTION = process.env.NODE_ENV === 'production',
+} = process.env;
 
 if (!SECRET_KEY) {
   throw new Error('SECRET_KEY is not defined in environment variables');
@@ -33,7 +37,7 @@ const app = express();
 
 
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
+  origin: ALLOWED_ORIGINS.split(','),
   credentials: true,
 }));
 
