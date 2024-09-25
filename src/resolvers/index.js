@@ -229,7 +229,9 @@ const resolvers = {
               voteCount: target.votes,
             };
           } else {
-            const increment = voteType === 'upvote' ? { upvotes: 1, downvotes: -1 } : { upvotes: -1, downvotes: 1 };
+            const increment = voteType === 'upvote' ? {
+              'votes.upvotes': 1, 'votes.downvotes': -1
+            } : { 'votes.upvotes': -1, 'votes.downvotes': 1 };
             // update vote type and count
             await Vote.findByIdAndUpdate(existingVote._id, { voteType }, { new: true });
             const updatedTarget = await Model.findByIdAndUpdate(
@@ -255,7 +257,7 @@ const resolvers = {
           await vote.save();
 
           // update target votes
-          const increment = voteType === 'upvote' ? { upvotes: 1 } : { downvotes: 1 };
+          const increment = voteType === 'upvote' ? { 'votes.upvotes': 1 } : { 'votes.downvotes': 1 };
           const updatedTarget = await Model.findByIdAndUpdate(
             targetId,
             { $inc: increment },
