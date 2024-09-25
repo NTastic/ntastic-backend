@@ -229,25 +229,19 @@ const resolvers = {
               voteCount: target.votes,
             };
           } else {
-            // update vote type
-            existingVote.voteType = voteType;
-            await existingVote.save();
-
-            // update target votes
-            if (voteType === 'upvote') {
-              target.votes.upvotes += 1;
-              target.votes.downvotes = Math.max(target.votes.downvotes - 1, 0);
-            } else {
-              target.votes.upvotes -= 1;
-              target.votes.downvotes = Math.max(target.votes.upvotes - 1, 0);
-            }
-
-            await target.save();
+            const increment = voteType === 'upvote' ? { upvotes: 1, downvotes: -1 } : { upvotes: -1, downvotes: 1 };
+            // update vote type and count
+            await Vote.findByIdAndUpdate(existingVote._id, { voteType }, { new: true });
+            const updatedTarget = await Model.findByIdAndUpdate(
+              targetId,
+              { $inc: increment },
+              { new: true }
+            );
 
             return {
               success: true,
               message: 'Vote updated',
-              voteCount: target.votes,
+              voteCount: updatedTarget.votes,
             };
           }
         } else {
@@ -261,18 +255,17 @@ const resolvers = {
           await vote.save();
 
           // update target votes
-          if (voteType === 'upvote') {
-            target.votes.upvotes += 1;
-          } else {
-            target.votes.downvotes += 1;
-          }
-
-          await target.save();
+          const increment = voteType === 'upvote' ? { upvotes: 1 } : { downvotes: 1 };
+          const updatedTarget = await Model.findByIdAndUpdate(
+            targetId,
+            { $inc: increment },
+            { new: true }
+          );
 
           return {
             success: true,
             message: 'Vote recorded',
-            voteCount: target.votes,
+            voteCount: updatedTarget.votes,
           };
         }
       } catch (error) {
