@@ -218,15 +218,11 @@ const resolvers = {
       const target = await Model.findById(targetId);
       if (!target) throw new Error(`${targetType} not found`);
 
-      const session = await mongoose.startSession();
-      session.startTransaction();
       try {
-        const existingVote = await Vote.findOne({ userId, targetId }).session(session);
+        const existingVote = await Vote.findOne({ userId, targetId });
 
         if (existingVote) {
           if (existingVote.voteType === voteType) {
-            await session.commitTransaction();
-            session.endSession();
             return {
               success: false,
               message: `You have already ${voteType}d this ${targetType.toLowerCase()}`,
@@ -235,7 +231,7 @@ const resolvers = {
           } else {
             // update vote type
             existingVote.voteType = voteType;
-            await existingVote.save({ session });
+            await existingVote.save();
 
             // update target votes
             if (voteType === 'upvote') {
@@ -246,10 +242,7 @@ const resolvers = {
               target.votes.downvotes = Math.max(target.votes.upvotes - 1, 0);
             }
 
-            await target.save({ session });
-
-            await session.commitTransaction();
-            session.endSession();
+            await target.save();
 
             return {
               success: true,
@@ -265,7 +258,7 @@ const resolvers = {
             targetType,
             voteType,
           });
-          await vote.save({ session });
+          await vote.save();
 
           // update target votes
           if (voteType === 'upvote') {
@@ -274,10 +267,8 @@ const resolvers = {
             target.votes.downvotes += 1;
           }
 
-          await target.save({ session });
+          await target.save();
 
-          await session.commitTransaction();
-          session.endSession();
           return {
             success: true,
             message: 'Vote recorded',
@@ -285,8 +276,7 @@ const resolvers = {
           };
         }
       } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
+        console.error("Vote mutation error:", error);
         throw new Error('Failed to process vote');
       }
     },
