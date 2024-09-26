@@ -11,17 +11,12 @@ import dotenvFlow from 'dotenv-flow';
 
 import typeDefs from './graphql/typeDefs.js';
 import resolvers from './graphql/resolvers.js';
-import { connectDB, getGridFSBucket } from './gridfs.js';
+import { connectDB } from './gridfs.js';
+import { imagesEndpoint } from './utils/image.js';
 
 import aiAnswerQueue from './jobs/aiAnswer.js';
 
-import path from 'path';
-import { fileURLToPath } from 'url';
-
 const { ObjectId } = mongoose.Types;
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 dotenvFlow.config();
 
@@ -77,27 +72,7 @@ const startServer = async () => {
   app.use(graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 10 }));
 
   // Image download endpoint
-  app.get('/images/:id', async (req, res) => {
-    try {
-      const fileId = new ObjectId(req.params.id);
-      const bucket = getGridFSBucket();
-
-      const files = await bucket.find({ _id: fileId }).toArray();
-      if (!files || files.length === 0) {
-        return res.status(404).json({ message: 'Image not found' });
-      }
-
-      const file = files[0];
-      res.set('Content-Type', file.contentType || 'application/octet-stream');
-      res.set('Content-Disposition', `inline; filename="${file.filename}"`);
-
-      const downloadStream = bucket.openDownloadStream(fileId);
-      downloadStream.pipe(res);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: 'Server error' });
-    }
-  });
+  app.get('/images/:id', imagesEndpoint);
 
   // Apollo Server config
   const server = new ApolloServer({
