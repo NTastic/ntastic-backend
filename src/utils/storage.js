@@ -31,7 +31,8 @@ export const checkStorageLimit = (user, newFileSize) => {
  * Updates the user's storage usage.
  */
 export const updateUserStorage = async (user, sizeChange) => {
-  user.imageStorageUsed += sizeChange;
+  if (sizeChange === 0) return;
+  user.imageStorageUsed = Math.max(0, user.imageStorageUsed + sizeChange);
   await user.save();
 };
 

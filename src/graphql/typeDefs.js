@@ -160,6 +160,8 @@ const typeDefs = gql`
     ): VoteResponse
 
     uploadImage(file: Upload!): Image!
+
+    deleteImage(imageId: ID!): Boolean!
   }
 
   type VoteResponse {

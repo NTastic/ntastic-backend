@@ -414,6 +414,54 @@ const resolvers = {
         });
       });
     },
+
+    deleteImage: async(_, { imageId }, { userId }) => {
+      const user = await validateUser(userId);
+
+      try {
+        const bucket = getGridFSBucket();
+
+        const fileId = new ObjectId(imageId);
+
+        // Find the file
+        const files = await bucket.find({ _id: fileId }).toArray();
+        if (!files || files.length === 0) {
+          throw new Error('File not found');
+        }
+
+        const file = files[0];
+
+        // Check ownership
+        if (file.metadata.uploadedBy.toString() !== userId) {
+          throw new Error('You are not authorized to delete this image');
+        }
+
+        // Delete the file from GridFS
+        await bucket.delete(fileId);
+
+        updateUserStorage(user, -file.length);
+
+        // Remove references to the image in User, Question, and Answer documents
+        await User.updateMany(
+          { avatarImageId: fileId },
+          { $unset: { avatarImageId: '' } }
+        );
+
+        await Question.updateMany(
+          { imageIds: fileId },
+          { $pull: { imageIds: fileId } }
+        );
+
+        await Answer.updateMany(
+          { imageIds: fileId },
+          { $pull: { imageIds: fileId } }
+        );
+        return true;
+      } catch (err) {
+        console.error('Error deleting image:', err);
+        throw new Error('An error occurred while deleting the image');
+      }
+    },
   },
 
   Image: {
