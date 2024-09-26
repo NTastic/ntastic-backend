@@ -10,8 +10,8 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const dotenvFlow = require('dotenv-flow');
 
-const typeDefs = require('./schema/typeDefs');
-const resolvers = require('./resolvers');
+const typeDefs = require('./graphql/typeDefs');
+const resolvers = require('./graphql/resolvers');
 const aiAnswerQueue = require('./jobs/aiAnswer');
 
 dotenvFlow.config();
