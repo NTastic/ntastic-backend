@@ -1,22 +1,26 @@
-const moduleAlias = require('module-alias');
-moduleAlias.addAlias('punycode', 'punycode/');
-const express = require('express');
-const { ApolloServer } = require('apollo-server-express');
-const mongoose = require('mongoose');
-const jwt = require('jsonwebtoken');
-const helmet = require('helmet');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const morgan = require('morgan');
-const dotenvFlow = require('dotenv-flow');
+import express from 'express';
+import { ApolloServer } from 'apollo-server-express';
+import jwt from 'jsonwebtoken';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+import dotenvFlow from 'dotenv-flow';
 
-const typeDefs = require('./graphql/typeDefs');
-const resolvers = require('./graphql/resolvers');
-const { connectDB } = require('./gridfs');
+import typeDefs from './graphql/typeDefs.js';
+import resolvers from './graphql/resolvers.js';
+import { connectDB } from './gridfs.js';
 
-const aiAnswerQueue = require('./jobs/aiAnswer');
+import aiAnswerQueue from './jobs/aiAnswer.js';
+
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenvFlow.config();
+
 const {
   SECRET_KEY,
   MONGODB_URI,
@@ -34,66 +38,66 @@ if (!MONGODB_URI) {
   throw new Error('MONGODB_URI is not defined in environment variables');
 }
 
-const startServer = async() => {
+const startServer = async () => {
 
-const app = express();
+  const app = express();
 
 
-app.use(cors({
-  origin: ALLOWED_ORIGINS.split(','),
-  credentials: true,
-}));
+  app.use(cors({
+    origin: ALLOWED_ORIGINS.split(','),
+    credentials: true,
+  }));
 
-// log
-if (IS_PRODUCTION) {
-  app.use(morgan('combined'))
-  // Security middlewares
-  app.use(helmet())
+  // log
+  if (IS_PRODUCTION) {
+    app.use(morgan('combined'))
+    // Security middlewares
+    app.use(helmet())
 
-  const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 2000, // limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again after 15 minutes',
-  });
-  app.use(limiter);
-} else {
-  app.use(morgan('dev'));
-}
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 2000, // limit each IP to 100 requests per windowMs
+      message: 'Too many requests from this IP, please try again after 15 minutes',
+    });
+    app.use(limiter);
+  } else {
+    app.use(morgan('dev'));
+  }
 
-// prevent large file request attack
-app.use(express.json({ limit: '10kb' }));
+  // prevent large file request attack
+  app.use(express.json({ limit: '10kb' }));
 
-// connect to MongoDB
-await connectDB();
+  // connect to MongoDB
+  await connectDB();
 
-// handling file uploads
-//app.use(graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 10 }));
+  // handling file uploads
+  //app.use(graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 10 }));
 
-// Apollo Server config
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  // playground: ENABLE_INTROSPECTION,
-  introspection: ENABLE_INTROSPECTION,
-  context: ({ req }) => {
-    // get token from request header
-    const token = req.headers.authorization || "";
-    let userId = null;
+  // Apollo Server config
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    // playground: ENABLE_INTROSPECTION,
+    introspection: ENABLE_INTROSPECTION,
+    context: ({ req }) => {
+      // get token from request header
+      const token = req.headers.authorization || "";
+      let userId = null;
 
-    if (token) {
-      try {
-        const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
-        userId = decoded.userId;
-      } catch (err) {
-        console.warn('Invalid token');
+      if (token) {
+        try {
+          const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
+          userId = decoded.userId;
+        } catch (err) {
+          console.warn('Invalid token');
+        }
       }
-    }
 
-    return { userId, SECRET_KEY };
-  },
-});
+      return { userId, SECRET_KEY };
+    },
+  });
 
-// start server
+  // start server
   await server.start();
   server.applyMiddleware({ app });
 

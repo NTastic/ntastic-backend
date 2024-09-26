@@ -2,6 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "NTastic backend",
+  "type": "module",
   "main": "src/index.js",
   "scripts": {
     "start": "NODE_ENV=production node src/index.js",
@@ -32,7 +33,6 @@
     "gridfs-stream": "^1.1.1",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
-    "module-alias": "^2.2.3",
     "mongoose": "^8.6.3",
     "morgan": "^1.10.0",
     "openai": "^4.63.0"

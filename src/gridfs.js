@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const Grid = require('gridfs-stream');
-const { MongoClient } = require('mongodb');
-require('dotenv-flow').config();
+import mongoose from 'mongoose';
+import Grid from 'gridfs-stream';
+import dotenvFlow from 'dotenv-flow';
+dotenvFlow.config();
 
 let gfs;
 let gridfsBucket;
@@ -28,7 +28,7 @@ const connectDB = async () => {
 const getGFS = () => gfs;
 const getGridFSBucket = () => gridfsBucket;
 
-module.exports = {
+export {
   connectDB,
   getGFS,
   getGridFSBucket,

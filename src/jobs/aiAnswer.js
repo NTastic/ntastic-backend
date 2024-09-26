@@ -1,14 +1,14 @@
-const Bull = require('bull');
-const mongoose = require('mongoose');
-const User = require('../models/User');
-const Question = require('../models/Question');
-const Answer = require('../models/Answer');
-const OpenAI = require('openai');
-require('dotenv-flow').config();
+import Bull from 'bull';
+import User from '../models/User.js';
+import Question from '../models/Question.js';
+import Answer from '../models/Answer.js';
+import OpenAI from 'openai';
+import dotenvFlow from 'dotenv-flow';
+dotenvFlow.config();
 
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
 const REDIS_PORT = process.env.REDIS_PORT || 6379;
-const REDIS_PASSWORD = process.env.REDIS_PASSWORD || null; 
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || null;
 
 const aiAnswerQueue = new Bull('ai-answer-queue', {
   redis: {
@@ -24,7 +24,7 @@ const SYSTEM_CONTENT = process.env.OPENAI_SYSTEM_PROMPT || "No more than 100 wor
 
 aiAnswerQueue.process(async (job) => {
   const { questionId } = job.data;
-  
+
   const question = await Question.findById(questionId);
   if (!question) {
     throw new Error(`Not found question with ID ${questionId}`);
@@ -78,5 +78,4 @@ aiAnswerQueue.on('error', (error) => {
   console.error('Bull queue error:', error);
 });
 
-module.exports = aiAnswerQueue;
-
+export default aiAnswerQueue;

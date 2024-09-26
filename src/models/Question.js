@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const QuestionSchema = new mongoose.Schema({
   title: { type: String, required: true },
@@ -19,4 +19,5 @@ QuestionSchema.path('tagIds').validate(function (value) {
 QuestionSchema.index({ tagIds: 1 });
 QuestionSchema.index({ authorId: 1 });
 
-module.exports = mongoose.model('Question', QuestionSchema);
+const Question = mongoose.model('Question', QuestionSchema);
+export default Question;

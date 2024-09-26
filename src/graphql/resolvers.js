@@ -1,16 +1,16 @@
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const Tag = require('../models/Tag');
-const Question = require('../models/Question');
-const Answer = require('../models/Answer');
-const Vote = require('../models/Vote');
-const aiAnswerQueue = require('../jobs/aiAnswer');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
+import Tag from '../models/Tag.js';
+import Question from '../models/Question.js';
+import Answer from '../models/Answer.js';
+import Vote from '../models/Vote.js';
+import aiAnswerQueue from '../jobs/aiAnswer.js';
 
-const { DateTimeResolver } = require('graphql-scalars');
+import { DateTimeResolver } from 'graphql-scalars';
 
-const JOB_ATTEMPTS=3;
-const JOB_BACKOFF=5000;
+const JOB_ATTEMPTS = 3;
+const JOB_BACKOFF = 5000;
 
 const resolvers = {
   Date: DateTimeResolver,
@@ -339,4 +339,4 @@ const resolvers = {
   },
 };
 
-module.exports = resolvers;
+export default resolvers;
