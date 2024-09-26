@@ -5,6 +5,7 @@ const QuestionSchema = new mongoose.Schema({
   content: { type: String, required: true },
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   tagIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Tag', required: true }],
+  imageIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'images.files' }],
   votes: {
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },

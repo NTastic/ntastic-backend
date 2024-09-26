@@ -2,11 +2,14 @@ import { gql } from 'apollo-server';
 
 const typeDefs = gql`
   scalar Date
+  scalar Upload
 
   type User {
     id: ID!
     username: String!
     email: String!
+    avatar: String
+    avatarImageId: ID
     createdAt: Date!
     updatedAt: Date
     questions: [Question]
@@ -29,6 +32,8 @@ const typeDefs = gql`
     id: ID!
     title: String!
     content: String!
+    imageIds: [ID]
+    images: [String]
     author: User!
     tags: [Tag!]!
     createdAt: Date!
@@ -40,6 +45,8 @@ const typeDefs = gql`
   type Answer {
     id: ID!
     content: String!
+    imageIds: [ID]
+    images: [String]
     author: User!
     question: Question!
     createdAt: Date!
@@ -50,6 +57,14 @@ const typeDefs = gql`
   type VoteCount {
     upvotes: Int!
     downvotes: Int!
+  }
+  
+  type Image {
+    id: ID!
+    filename: String!
+    contentType: String!
+    length: Int!
+    uploadDate: Date
   }
 
   enum TargetType {
@@ -90,11 +105,15 @@ const typeDefs = gql`
 
     getAnswer(id: ID!): Answer
     getAnswers(questionId: ID!): [Answer]
+
+    getImage(id: ID!): Image
   }
 
   type Mutation {
     register(username: String!, email: String!, password: String!): AuthPayload
     login(email: String!, password: String!): AuthPayload
+
+    updateUser(username: String, avatarImageId: ID): User
 
     createTag(
       name: String!,
@@ -119,7 +138,8 @@ const typeDefs = gql`
     createQuestion(
       title: String!,
       content: String!,
-      tagIds: [ID!]!
+      tagIds: [ID!]!,
+      imageIds: [ID]
     ): Question
 
     addTagsToQuestion(
@@ -129,7 +149,8 @@ const typeDefs = gql`
 
     createAnswer(
       questionId: ID!,
-      content: String!
+      content: String!,
+      imageIds: [ID]
     ): Answer
 
     vote(
@@ -137,6 +158,8 @@ const typeDefs = gql`
       targetType: String!,
       voteType: String!
     ): VoteResponse
+
+    uploadImage(file: Upload!): Image!
   }
 
   type VoteResponse {
