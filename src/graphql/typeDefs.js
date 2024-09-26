@@ -107,6 +107,7 @@ const typeDefs = gql`
     getAnswers(questionId: ID!): [Answer]
 
     getImage(id: ID!): Image
+    getUserImages: [Image!]!
   }
 
   type Mutation {
