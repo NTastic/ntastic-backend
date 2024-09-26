@@ -1,19 +1,26 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
 import User from '../models/User.js';
 import Tag from '../models/Tag.js';
 import Question from '../models/Question.js';
 import Answer from '../models/Answer.js';
 import Vote from '../models/Vote.js';
 import aiAnswerQueue from '../jobs/aiAnswer.js';
-
+import mongoose from 'mongoose';
+import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
+import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
+import { validateUser } from '../utils/user.js';
+
+const { ObjectId } = mongoose.Types;
 
 const JOB_ATTEMPTS = 3;
 const JOB_BACKOFF = 5000;
 
 const resolvers = {
   Date: DateTimeResolver,
+  Upload: GraphQLUpload,
 
   Query: {
     // get User
@@ -58,6 +65,29 @@ const resolvers = {
     getAnswers: async (_, { questionId }) => {
       return await Answer.find({ questionId });
     },
+
+    // get image
+    getImage: async (_, { id }) => {
+      const bucket = getGridFSBucket();
+      try {
+        const files = await bucket.find({ _id: new ObjectId(id) }).toArray();
+        if (!files || files.length === 0) {
+          throw new Error('Image not found');
+        }
+        const fileInfo = files[0];
+        const image = {
+          id: fileInfo._id,
+          filename: fileInfo.filename,
+          contentType: fileInfo.contentType,
+          length: fileInfo.length,
+          uploadDate: fileInfo.uploadDate,
+        };
+        return image;
+      } catch (err) {
+        console.error(err);
+        throw new Error('Error fetching image');
+      }
+    },
   },
 
   Mutation: {
@@ -99,8 +129,21 @@ const resolvers = {
       };
     },
 
+    updateUser: async (_, { username, avatarImageId }, { userId }) => {
+      const user = await validateUser(userId);
+
+      user.username = username || user.username;
+      user.avatarImageId = avatarImageId || user.avatarImageId;
+      user.updatedAt = new Date();
+
+      await user.save();
+      return user;
+    },
+
     // create tag
-    createTag: async (_, { name, description, synonyms, parentTagId }) => {
+    createTag: async (_, { name, description, synonyms, parentTagId }, { userId }) => {
+      await validateUser(userId);
+
       const formattedName = name.trim();
       const slug = formattedName.toLowerCase().replace(/\s+/g, '-');
 
@@ -118,7 +161,8 @@ const resolvers = {
       return await tag.save();
     },
 
-    updateTag: async (_, { id, name, description, synonyms, parentTagId }) => {
+    updateTag: async (_, { id, name, description, synonyms, parentTagId }, { userId }) => {
+      await validateUser(userId);
       const tag = await Tag.findById(id);
       if (!tag) throw new Error('Tag not found');
 
@@ -133,7 +177,8 @@ const resolvers = {
       return await tag.save();
     },
 
-    mergeTags: async (_, { sourceTagIds, targetTagId }) => {
+    mergeTags: async (_, { sourceTagIds, targetTagId }, { userId }) => {
+      await validateUser(userId);
       const targetTag = await Tag.findById(targetTagId);
       if (!targetTag) throw new Error('Target tag not found');
 
@@ -165,8 +210,8 @@ const resolvers = {
       };
     },
 
-    createQuestion: async (_, { title, content, tagIds }, { userId }) => {
-      if (!userId) throw new Error('Authentication required');
+    createQuestion: async (_, { title, content, tagIds, imageIds }, { userId }) => {
+      await validateUser(userId);
 
       if (!tagIds || tagIds.length === 0) {
         throw new Error('At least one tag is required');
@@ -182,6 +227,7 @@ const resolvers = {
         content,
         authorId: userId,
         tagIds,
+        imageIds,
       });
 
       const savedQuestion = await question.save();
@@ -195,7 +241,8 @@ const resolvers = {
       return savedQuestion;
     },
 
-    addTagsToQuestion: async (_, { questionId, tagIds }) => {
+    addTagsToQuestion: async (_, { questionId, tagIds }, { userId }) => {
+      await validateUser(userId);
       const question = await Question.findById(questionId);
       if (!question) throw new Error('Question not found');
 
@@ -204,8 +251,8 @@ const resolvers = {
       return await question.save();
     },
 
-    createAnswer: async (_, { questionId, content }, { userId }) => {
-      if (!userId) throw new Error('Authentication required');
+    createAnswer: async (_, { questionId, content, imageIds }, { userId }) => {
+      await validateUser(userId);
 
       const question = await Question.findById(questionId);
       if (!question) throw new Error('Question not found');
@@ -214,13 +261,14 @@ const resolvers = {
         questionId,
         content,
         authorId: userId,
+        imageIds,
       });
 
       return await answer.save();
     },
 
     vote: async (_, { targetId, targetType, voteType }, { userId }) => {
-      if (!userId) throw new Error('Authentication required');
+      await validateUser(userId);
 
       if (!['Question', 'Answer'].includes(targetType)) {
         throw new Error('Invalid target type');
@@ -291,14 +339,148 @@ const resolvers = {
         throw new Error('Failed to process vote');
       }
     },
+
+    // upload image
+    uploadImage: async (_, { file }, { userId }) => {
+      await validateUser(userId);
+
+      const bucket = getGridFSBucket();
+      const { createReadStream, filename, mimetype } = await file;
+
+      // create a stream and calculate file size
+      const stream = createReadStream();
+      let fileSize = 0;
+      const chunks = [];
+
+      stream.on('data', (chunk) => {
+        fileSize += chunk.length;
+        chunks.push(chunk);
+      });
+
+      await new Promise((resolve, reject) => {
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+
+      const buffer = Buffer.concat(chunks);
+
+      // validate the file
+      validateFile(mimetype, fileSize);
+
+      checkStorageLimit(user, fileSize);
+
+      // Sanitize filename
+      const sanitizedFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+
+      // upload to GridFS
+      const uploadStream = bucket.openUploadStream(sanitizedFilename, {
+        contentType: mimetype,
+
+        metadata: {
+          uploadedBy: userId,
+          originalName: filename,
+        },
+      });
+
+      uploadStream.end(buffer);
+
+      return new Promise((resolve, reject) => {
+        uploadStream.on('error', (error) => {
+          console.error('Error uploading file:', error);
+          reject(new Error('Error uploading file'));
+        });
+
+        uploadStream.on('finish', async () => {
+          try {
+            await updateUserStorage(user, fileSize);
+            const files = await bucket.find({ _id: uploadStream.id }).toArray();
+            if (files.length === 0) {
+              throw new Error('Failed to retrieve uploaded file info');
+            }
+            const fileInfo = files[0];
+            const image = {
+              id: fileInfo._id,
+              filename: fileInfo.filename,
+              contentType: fileInfo.contentType,
+              length: fileInfo.length,
+              uploadDate: fileInfo.uploadDate,
+            };
+            // console.log('uploaded image:', image);
+            resolve(image);
+          } catch (err) {
+            console.error(err);
+            reject(new Error('Error updating user storage'));
+          }
+        });
+      });
+    },
+
+    deleteImage: async(_, { imageId }, { userId }) => {
+      const user = await validateUser(userId);
+
+      try {
+        const bucket = getGridFSBucket();
+
+        const fileId = new ObjectId(imageId);
+
+        // Find the file
+        const files = await bucket.find({ _id: fileId }).toArray();
+        if (!files || files.length === 0) {
+          throw new Error('File not found');
+        }
+
+        const file = files[0];
+
+        // Check ownership
+        if (file.metadata.uploadedBy.toString() !== userId) {
+          throw new Error('You are not authorized to delete this image');
+        }
+
+        // Delete the file from GridFS
+        await bucket.delete(fileId);
+
+        updateUserStorage(user, -file.length);
+
+        // Remove references to the image in User, Question, and Answer documents
+        await User.updateMany(
+          { avatarImageId: fileId },
+          { $unset: { avatarImageId: '' } }
+        );
+
+        await Question.updateMany(
+          { imageIds: fileId },
+          { $pull: { imageIds: fileId } }
+        );
+
+        await Answer.updateMany(
+          { imageIds: fileId },
+          { $pull: { imageIds: fileId } }
+        );
+        return true;
+      } catch (err) {
+        console.error('Error deleting image:', err);
+        throw new Error('An error occurred while deleting the image');
+      }
+    },
   },
 
+  Image: {
+    id: (parent) => parent.id,
+    filename: (parent) => parent.filename,
+    contentType: (parent) => parent.contentType,
+    length: (parent) => parent.length,
+    uploadDate: (parent) => parent.uploadDate,
+  },
   User: {
     questions: async (user) => {
       return await Question.find({ authorId: user.id });
     },
     answers: async (user) => {
       return await Answer.find({ authorId: user.id });
+    },
+    avatar: async (parent) => {
+      if (!parent.avatarImageId) return null;
+      return `/images/${parent.avatarImageId}`;
     },
   },
 
@@ -312,6 +494,10 @@ const resolvers = {
   },
 
   Question: {
+    images: async (question) => {
+      if (!question.imageIds || question.imageIds.length === 0) return [];
+      return question.imageIds.map(id => `/images/${id}`);
+    },
     author: async (question) => {
       return await User.findById(question.authorId);
     },
@@ -324,6 +510,10 @@ const resolvers = {
   },
 
   Answer: {
+    images: async (answer) => {
+      if (!answer.imageIds || answer.imageIds.length === 0) return [];
+      return answer.imageIds.map(id => `/images/${id}`);
+    },
     author: async (answer) => {
       return await User.findById(answer.authorId);
     },

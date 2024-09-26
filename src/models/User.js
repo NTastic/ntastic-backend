@@ -4,6 +4,8 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
   isBot: { type: Boolean, default: false },
+  avatarImageId: { type: mongoose.Schema.Types.ObjectId, ref: 'images.files' },
+  storageUsed: { type: Number, default: 0 },
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
