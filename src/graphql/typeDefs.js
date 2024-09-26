@@ -67,6 +67,16 @@ const typeDefs = gql`
     uploadDate: Date
   }
 
+  enum SortOrder {
+    ASC
+    DESC
+  }
+
+  enum TagMatchType {
+    ANY
+    ALL
+  }
+
   enum TargetType {
     Question
     Answer
@@ -91,6 +101,20 @@ const typeDefs = gql`
     user: User!
   }
 
+  type QuestionPagination {
+    items: [Question!]!
+    totalItems: Int!
+    totalPages: Int!
+    currentPage: Int!
+  }
+
+  type AnswerPagination {
+    items: [Answer!]!
+    totalItems: Int!
+    totalPages: Int!
+    currentPage: Int!
+  }
+
   type Query {
     getUser(id: ID!): User
     getUsers: [User]
@@ -98,13 +122,23 @@ const typeDefs = gql`
     getTag(id: ID!): Tag
     getTags: [Tag]
     searchTags(keyword: String!): [Tag]
-    getQuestionsByTag(tagId: ID!): [Question]
 
     getQuestion(id: ID!): Question
-    getQuestions: [Question]
+    getQuestions(
+      tagIds: [ID!]
+      tagMatch: TagMatchType = ANY
+      page: Int = 1
+      limit: Int = 10
+      sortOrder: SortOrder = DESC
+    ): QuestionPagination!
 
     getAnswer(id: ID!): Answer
-    getAnswers(questionId: ID!): [Answer]
+    getAnswers(
+      questionId: ID!
+      page: Int = 1
+      limit: Int = 10
+      sortOrder: SortOrder = ASC
+    ): AnswerPagination!
 
     getImage(id: ID!): Image
     getUserImages: [Image!]!

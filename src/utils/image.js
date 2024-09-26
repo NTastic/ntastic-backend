@@ -2,13 +2,11 @@ import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 
 export const imagesEndpoint = async (req, res) => {
-  let fileId
   try {
-    fileId = new mongoose.Types.ObjectId(req.params.id);
-  } catch {
-    return res.status(404).json({ message: 'Image not found' });
-  }
-  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Image not found' });
+    }
+    const fileId = new mongoose.Types.ObjectId(req.params.id);
     const bucket = getGridFSBucket();
 
     const files = await bucket.find({ _id: fileId }).toArray();
