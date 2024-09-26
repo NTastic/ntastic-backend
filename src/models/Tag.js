@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const TagSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
@@ -10,4 +10,5 @@ const TagSchema = new mongoose.Schema({
 
 TagSchema.index({ slug: 1 }, { unique: true });
 
-module.exports = mongoose.model('Tag', TagSchema);
+const Tag = mongoose.model('Tag', TagSchema);
+export default Tag;
