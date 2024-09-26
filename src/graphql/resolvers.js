@@ -369,7 +369,7 @@ const resolvers = {
 
     // upload image
     uploadImage: async (_, { file }, { userId }) => {
-      await validateUser(userId);
+      const user = await validateUser(userId);
 
       const bucket = getGridFSBucket();
       const { createReadStream, filename, mimetype } = await file;
