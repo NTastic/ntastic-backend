@@ -10,7 +10,7 @@ const QuestionSchema = new mongoose.Schema({
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },
   },
-});
+}, { timestamps: true });
 
 QuestionSchema.path('tagIds').validate(function (value) {
   return value.length > 0;
