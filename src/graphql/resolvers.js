@@ -88,6 +88,33 @@ const resolvers = {
         throw new Error('Error fetching image');
       }
     },
+
+    // get user images
+    getUserImages: async (_, __, { userId }) => {
+      await validateUser(userId);
+  
+      try {
+        const bucket = getGridFSBucket();
+
+        // Find all files where metadata.uploadedBy matches
+        const files = await bucket
+          .find({ 'metadata.uploadedBy': userId })
+          .toArray();
+
+        // Map the files to Image type
+        const images = files.map((file) => ({
+          id: file._id.toString(),
+          filename: file.filename,
+          contentType: file.contentType || 'application/octet-stream',
+          length: file.length,
+          uploadDate: file.uploadDate,
+        }));
+        return images;
+      } catch (err) {
+        console.error('Error fetching user images:', err);
+        throw new Error('An error occurred while fetching images');
+      }
+    },
   },
 
   Mutation: {
