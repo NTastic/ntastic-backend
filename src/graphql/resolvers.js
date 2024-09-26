@@ -92,7 +92,7 @@ const resolvers = {
     // get user images
     getUserImages: async (_, __, { userId }) => {
       await validateUser(userId);
-  
+
       try {
         const bucket = getGridFSBucket();
 
@@ -442,7 +442,7 @@ const resolvers = {
       });
     },
 
-    deleteImage: async(_, { imageId }, { userId }) => {
+    deleteImage: async (_, { imageId }, { userId }) => {
       const user = await validateUser(userId);
 
       try {
@@ -486,7 +486,7 @@ const resolvers = {
         return true;
       } catch (err) {
         console.error('Error deleting image:', err);
-        throw new Error('An error occurred while deleting the image');
+        throw new Error('Error deleting the image');
       }
     },
   },
