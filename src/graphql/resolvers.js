@@ -46,30 +46,95 @@ const resolvers = {
         ],
       });
     },
-    getQuestionsByTag: async (_, { tagId }) => {
-      return await Question.find({ tagIds: tagId });
-    },
 
     // get question
     getQuestion: async (_, { id }) => {
       return await Question.findById(id);
     },
-    getQuestions: async () => {
-      return await Question.find();
+    getQuestions: async (_, { tagIds, tagMatch = 'ANY', page = 1, limit = 10, sortOrder = 'DESC' }) => {
+      try {
+        const skip = (page - 1) * limit;
+
+        const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
+
+        // Build filter options
+        let filterOptions = {};
+        if (tagIds && tagIds.length > 0) {
+          const tagObjectIds = tagIds.map((id) => new mongoose.Types.ObjectId(id));
+          if (tagMatch === 'ALL') {
+            filterOptions.tagIds = { $all: tagObjectIds };
+          } else {
+            // 'ANY' match
+            filterOptions.tagIds = { $in: tagObjectIds };
+          }
+        }
+
+        const totalItems = await Question.countDocuments(filterOptions);
+
+        const totalPages = Math.ceil(totalItems / limit);
+
+        const items = await Question.find(filterOptions)
+          .sort(sortOptions)
+          .skip(skip)
+          .limit(limit)
+          .populate([
+            { path: 'authorId', model: 'User' },
+            { path: 'tagIds', model: 'Tag' },
+          ]);
+
+        return {
+          items,
+          totalItems,
+          totalPages,
+          currentPage: page,
+        };
+      } catch (err) {
+        console.error('Error fetching questions:', err);
+        throw new Error('Error fetching questions');
+      }
     },
 
     // get answer
     getAnswer: async (_, { id }) => {
       return await Answer.findById(id);
     },
-    getAnswers: async (_, { questionId }) => {
-      return await Answer.find({ questionId });
+    getAnswers: async (_, { questionId, page = 1, limit = 10, sortOrder = 'ASC' }) => {
+      try {
+        const skip = (page - 1) * limit;
+
+        const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
+
+        const questionObjectId = new ObjectId(questionId);
+        const filterOptions = { questionId: questionObjectId };
+
+        const totalItems = await Answer.countDocuments(filterOptions);
+        const totalPages = Math.ceil(totalItems / limit);
+        const items = await Answer.find(filterOptions)
+          .sort(sortOptions)
+          .skip(skip)
+          .limit(limit)
+          .populate([
+            { path: 'authorId', model: 'User' },
+            { path: 'imageIds', model: 'images.files' },
+          ]);
+
+        return {
+          items,
+          totalItems,
+          totalPages,
+          currentPage: page,
+        };
+      } catch (err) {
+        console.error('Error fetching answers:', err);
+        throw new Error('Error fetching answers');
+      }
     },
 
     // get image
     getImage: async (_, { id }) => {
       const bucket = getGridFSBucket();
       try {
+        if (!ObjectId.isValid(id)) throw new Error('Invalid ID');
         const files = await bucket.find({ _id: new ObjectId(id) }).toArray();
         if (!files || files.length === 0) {
           throw new Error('Image not found');
@@ -92,7 +157,7 @@ const resolvers = {
     // get user images
     getUserImages: async (_, __, { userId }) => {
       await validateUser(userId);
-  
+
       try {
         const bucket = getGridFSBucket();
 
@@ -442,10 +507,11 @@ const resolvers = {
       });
     },
 
-    deleteImage: async(_, { imageId }, { userId }) => {
+    deleteImage: async (_, { imageId }, { userId }) => {
       const user = await validateUser(userId);
 
       try {
+        if (!ObjectId.isValid(imageId)) return false;
         const bucket = getGridFSBucket();
 
         const fileId = new ObjectId(imageId);
@@ -486,7 +552,7 @@ const resolvers = {
         return true;
       } catch (err) {
         console.error('Error deleting image:', err);
-        throw new Error('An error occurred while deleting the image');
+        throw new Error('Error deleting the image');
       }
     },
   },
