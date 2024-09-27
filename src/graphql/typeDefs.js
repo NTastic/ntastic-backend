@@ -17,13 +17,13 @@ const typeDefs = gql`
   type Tag {
     id: ID!
     name: String!
+    questionCount: Int!
     slug: String!
     description: String
     synonyms: [String]
     parentTag: Tag
     createdAt: Date!
     updatedAt: Date
-    questions: [Question]
   }
 
   type Question {
@@ -75,6 +75,16 @@ const typeDefs = gql`
     ALL
   }
 
+  enum TagSortField {
+    name
+    questionCount
+  }
+
+  input TagSortInput {
+    field: TagSortField!
+    order: SortOrder!
+  }
+
   enum TargetType {
     Question
     Answer
@@ -118,7 +128,9 @@ const typeDefs = gql`
     getUsers: [User]
 
     getTag(id: ID!): Tag
-    getTags: [Tag]
+    getTags(
+      sort: TagSortInput = { field: name, order: ASC }
+    ): [Tag]
     searchTags(keyword: String!): [Tag]
 
     getQuestion(id: ID!): Question

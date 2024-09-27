@@ -36,8 +36,12 @@ const resolvers = {
     getTag: async (_, { id }) => {
       return await Tag.findById(id);
     },
-    getTags: async () => {
-      return await Tag.find();
+    getTags: async (_, { sort }) => {
+      const sortField = sort?.field || 'name';
+      const sortOrder = sort?.order === 'DESC' ? -1 : 1;
+      const sortOptions = { [sortField]: sortOrder };
+
+      return await Tag.find().sort(sortOptions);
     },
     searchTags: async (_, { keyword }) => {
       return await Tag.find({
@@ -284,6 +288,11 @@ const resolvers = {
       });
 
       const savedQuestion = await question.save();
+
+      await Tag.updateMany(
+        { _id: { $in: savedQuestion.tagIds } },
+        { $inc: { questionCount: 1 } }
+      );
 
       // add to ai answer queue
       await aiAnswerQueue.add({ questionId: savedQuestion._id }, {
@@ -562,9 +571,6 @@ const resolvers = {
   Tag: {
     parentTag: async (tag) => {
       return await Tag.findById(tag.parentTagId);
-    },
-    questions: async (tag) => {
-      return await Question.find({ tagIds: tag.id });
     },
   },
 
