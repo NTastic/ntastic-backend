@@ -12,6 +12,7 @@ import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
 import { validateUser } from '../utils/user.js';
+import { getBaseUrl } from '../utils/url.js';
 
 const { ObjectId } = mongoose.Types;
 
@@ -596,9 +597,9 @@ const resolvers = {
     answers: async (user) => {
       return await Answer.find({ authorId: user.id });
     },
-    avatar: async (parent) => {
+    avatar: async (parent, _, context) => {
       if (!parent.avatarImageId) return null;
-      return `/images/${parent.avatarImageId}`;
+      return `${getBaseUrl(context)}/images/${parent.avatarImageId}`;
     },
   },
 
@@ -612,9 +613,9 @@ const resolvers = {
   },
 
   Question: {
-    images: async (question) => {
+    images: async (question, _, context) => {
       if (!question.imageIds || question.imageIds.length === 0) return [];
-      return question.imageIds.map(id => `/images/${id}`);
+      return question.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`);
     },
     author: async (question) => {
       return await User.findById(question.authorId);
@@ -628,9 +629,9 @@ const resolvers = {
   },
 
   Answer: {
-    images: async (answer) => {
+    images: async (answer, _, context) => {
       if (!answer.imageIds || answer.imageIds.length === 0) return [];
-      return answer.imageIds.map(id => `/images/${id}`);
+      return answer.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`);
     },
     author: async (answer) => {
       return await User.findById(answer.authorId);

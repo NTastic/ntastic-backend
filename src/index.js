@@ -74,6 +74,9 @@ const startServer = async () => {
   // Image download endpoint
   app.get('/images/:id', imagesEndpoint);
 
+  // for nginx reverse proxy
+  app.set('trust proxy', true);
+
   // Apollo Server config
   const server = new ApolloServer({
     typeDefs,
@@ -94,7 +97,7 @@ const startServer = async () => {
         }
       }
 
-      return { userId, SECRET_KEY };
+      return { req, userId, SECRET_KEY };
     },
   });
 
