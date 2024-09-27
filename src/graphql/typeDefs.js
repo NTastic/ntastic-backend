@@ -182,6 +182,8 @@ const typeDefs = gql`
       targetTagId: ID!
     ): MergeTagsResponse
 
+    deleteTag(id: ID!): Boolean!
+
     createQuestion(
       title: String!,
       content: String!,
@@ -197,6 +199,8 @@ const typeDefs = gql`
       imageIds: [ID!]
     ): Question
 
+    deleteQuestion(id: ID!): Boolean!
+
     createAnswer(
       questionId: ID!,
       content: String!,
@@ -208,6 +212,8 @@ const typeDefs = gql`
       content: String,
       imageIds: [ID!]
     ): Answer
+
+    deleteAnswer(id: ID!): Boolean!
 
     vote(
       targetId: ID!,

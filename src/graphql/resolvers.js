@@ -324,6 +324,44 @@ const resolvers = {
       return await question.save();
     },
 
+    deleteQuestion: async (_, { id }, { userId }) => {
+      await validateUser(userId);
+
+      if (!ObjectId.isValid(id)) throw new Error('Invalid question ID');
+
+      const question = await Question.findById(id);
+
+      if (!question) return false;
+
+      if (question.authorId.toString() !== userId) {
+        throw new Error('You are not authorized to delete this question');
+      }
+
+      // delete associated answers
+      await Answer.deleteMany({ questionId: question._id });
+
+      // update tags question count
+      await Tag.updateMany(
+        { _id: { $in: question.tagIds } },
+        { $inc: { questionCount: -1 } }
+      );
+
+      // delete associated images
+      if (question.imageIds && question.imageIds.length > 0) {
+        for (const imageId of question.imageIds) {
+          try {
+            await deleteImage(imageId, userId);
+          } catch (err) {
+            console.error(`Error delete image ${imageId}:`, err);
+          }
+        }
+      }
+
+      await Question.deleteOne({ _id: id });
+
+      return true;
+    },
+
     createAnswer: async (_, { questionId, content, imageIds }, { userId }) => {
       await validateUser(userId);
 
@@ -354,6 +392,34 @@ const resolvers = {
         answer.imageIds = imageIds;
       }
       return await answer.save();
+    },
+
+    deleteAnswer: async (_, { id }, { userId }) => {
+      await validateUser(userId);
+
+      if (!ObjectId.isValid(id)) throw new Error('Invalid answer ID');
+
+      const answer = await Answer.findById(id);
+
+      if (!answer) return false;
+
+      if (answer.authorId.toString() !== userId) {
+        throw new Error('You are not authorized to delete this answer');
+      }
+
+      // delete associated images
+      if (answer.imageIds && answer.imageIds.length > 0) {
+        for (const imageId of answer.imageIds) {
+          try {
+            await deleteImage(imageId, userId);
+          } catch (err) {
+            console.error(`Error deleting image ${imageId}:`, err);
+          }
+        }
+      }
+
+      await Answer.deleteOne({ _id: id });
+      return true;
     },
 
     vote: async (_, { targetId, targetType, voteType }, { userId }) => {
