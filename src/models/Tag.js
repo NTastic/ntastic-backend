@@ -6,6 +6,7 @@ const TagSchema = new mongoose.Schema({
   description: { type: String },
   synonyms: [{ type: String }],
   parentTagId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tag' },
+  questionCount: { type: Number, default: 0 },
 }, { timestamps: true });
 
 TagSchema.index({ slug: 1 }, { unique: true });

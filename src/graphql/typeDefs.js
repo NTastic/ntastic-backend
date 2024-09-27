@@ -12,20 +12,18 @@ const typeDefs = gql`
     avatarImageId: ID
     createdAt: Date!
     updatedAt: Date
-    questions: [Question]
-    answers: [Answer]
   }
 
   type Tag {
     id: ID!
     name: String!
+    questionCount: Int!
     slug: String!
     description: String
     synonyms: [String]
     parentTag: Tag
     createdAt: Date!
     updatedAt: Date
-    questions: [Question]
   }
 
   type Question {
@@ -78,6 +76,16 @@ const typeDefs = gql`
     ALL
   }
 
+  enum TagSortField {
+    name
+    questionCount
+  }
+
+  input TagSortInput {
+    field: TagSortField!
+    order: SortOrder!
+  }
+
   enum TargetType {
     Question
     Answer
@@ -86,6 +94,7 @@ const typeDefs = gql`
   enum VoteType {
     upvote
     downvote
+    cancel
   }
 
   type Vote {
@@ -121,13 +130,16 @@ const typeDefs = gql`
     getUsers: [User]
 
     getTag(id: ID!): Tag
-    getTags: [Tag]
+    getTags(
+      sort: TagSortInput = { field: name, order: ASC }
+    ): [Tag]
     searchTags(keyword: String!): [Tag]
 
     getQuestion(id: ID!): Question
     getQuestions(
       tagIds: [ID!]
       tagMatch: TagMatchType = ANY
+      userId: ID
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = DESC
@@ -135,7 +147,8 @@ const typeDefs = gql`
 
     getAnswer(id: ID!): Answer
     getAnswers(
-      questionId: ID!
+      questionId: ID
+      userId: ID
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = ASC
@@ -171,6 +184,8 @@ const typeDefs = gql`
       targetTagId: ID!
     ): MergeTagsResponse
 
+    deleteTag(id: ID!): Boolean!
+
     createQuestion(
       title: String!,
       content: String!,
@@ -186,6 +201,8 @@ const typeDefs = gql`
       imageIds: [ID!]
     ): Question
 
+    deleteQuestion(id: ID!): Boolean!
+
     createAnswer(
       questionId: ID!,
       content: String!,
@@ -197,6 +214,8 @@ const typeDefs = gql`
       content: String,
       imageIds: [ID!]
     ): Answer
+
+    deleteAnswer(id: ID!): Boolean!
 
     vote(
       targetId: ID!,
