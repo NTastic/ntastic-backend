@@ -60,7 +60,7 @@ const resolvers = {
         // Build filter options
         let filterOptions = {};
         if (tagIds && tagIds.length > 0) {
-          const tagObjectIds = tagIds.map((id) => new mongoose.Types.ObjectId(id));
+          const tagObjectIds = tagIds;
           if (tagMatch === 'ALL') {
             filterOptions.tagIds = { $all: tagObjectIds };
           } else {
@@ -104,8 +104,7 @@ const resolvers = {
 
         const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
 
-        const questionObjectId = new ObjectId(questionId);
-        const filterOptions = { questionId: questionObjectId };
+        const filterOptions = { questionId: questionId };
 
         const totalItems = await Answer.countDocuments(filterOptions);
         const totalPages = Math.ceil(totalItems / limit);
@@ -115,7 +114,6 @@ const resolvers = {
           .limit(limit)
           .populate([
             { path: 'authorId', model: 'User' },
-            { path: 'imageIds', model: 'images.files' },
           ]);
 
         return {
@@ -333,13 +331,24 @@ const resolvers = {
       return savedQuestion;
     },
 
-    addTagsToQuestion: async (_, { questionId, tagIds }, { userId }) => {
+    updateQuestion: async (_, { id, title, content, tagIds, imageIds }, { userId }) => {
       await validateUser(userId);
-      const question = await Question.findById(questionId);
+      const question = await Question.findById(id);
       if (!question) throw new Error('Question not found');
-
-      question.tagIds = [...new Set([...question.tagIds, ...tagIds])];
-
+      if (question.authorId.toString() !== userId) throw new Error('Cannot edit other users\' content');
+      if (!title && !content && (!tagIds || tagIds.length === 0) && !imageIds) return question;
+      if (title) {
+        question.title = title.trim();
+      }
+      if (content && content.trim()) {
+        question.content = content.trim();
+      }
+      if (tagIds && tagIds.length >= 0) {
+        question.tagIds = tagIds.map((id) => new ObjectId(id));
+      }
+      if (imageIds) {
+        question.imageIds = imageIds.map((id) => new ObjectId(id));
+      }
       return await question.save();
     },
 
@@ -356,6 +365,22 @@ const resolvers = {
         imageIds,
       });
 
+      return await answer.save();
+    },
+
+    updateAnswer: async (_, { id, content, imageIds }, { userId }) => {
+      await validateUser(userId);
+
+      const answer = await Answer.findById(id);
+      if (!answer) throw new Error('Question not found');
+      if (answer.authorId.toString() !== userId) throw new Error('Cannot edit other users\' content');
+      if (!content && !imageIds) return answer;
+      if (content && content.trim()) {
+        answer.content = content.trim();
+      }
+      if (imageIds) {
+        answer.imageIds = imageIds;
+      }
       return await answer.save();
     },
 

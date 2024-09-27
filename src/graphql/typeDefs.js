@@ -32,7 +32,7 @@ const typeDefs = gql`
     id: ID!
     title: String!
     content: String!
-    imageIds: [ID]
+    imageIds: [ID!]
     images: [String]
     author: User!
     tags: [Tag!]!
@@ -45,7 +45,7 @@ const typeDefs = gql`
   type Answer {
     id: ID!
     content: String!
-    imageIds: [ID]
+    imageIds: [ID!]
     images: [String]
     author: User!
     question: Question!
@@ -174,18 +174,27 @@ const typeDefs = gql`
       title: String!,
       content: String!,
       tagIds: [ID!]!,
-      imageIds: [ID]
+      imageIds: [ID!]
     ): Question
 
-    addTagsToQuestion(
-      questionId: ID!,
-      tagIds: [ID!]!
+    updateQuestion(
+      id: ID!,
+      title: String,
+      content: String,
+      tagIds: [ID!],
+      imageIds: [ID!]
     ): Question
 
     createAnswer(
       questionId: ID!,
       content: String!,
-      imageIds: [ID]
+      imageIds: [ID!]
+    ): Answer
+
+    updateAnswer(
+      id: ID!,
+      content: String,
+      imageIds: [ID!]
     ): Answer
 
     vote(
