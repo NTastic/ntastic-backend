@@ -93,6 +93,7 @@ const typeDefs = gql`
   enum VoteType {
     upvote
     downvote
+    cancel
   }
 
   type Vote {

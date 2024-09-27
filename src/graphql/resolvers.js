@@ -429,7 +429,7 @@ const resolvers = {
         throw new Error('Invalid target type');
       }
 
-      if (!['upvote', 'downvote'].includes(voteType)) {
+      if (!['upvote', 'downvote', 'cancel'].includes(voteType)) {
         throw new Error('Invalid vote type');
       }
 
@@ -441,7 +441,27 @@ const resolvers = {
         const existingVote = await Vote.findOne({ userId, targetId });
 
         if (existingVote) {
-          if (existingVote.voteType === voteType) {
+          if ('cancel' === voteType) {
+            // remove the existing vote
+            await Vote.deleteOne({ _id: existingVote._id });
+
+            // adjust vote counts
+            const increment =
+              existingVote.voteType === 'upvote'
+                ? { 'votes.upvotes': -1 }
+                : { 'votes.downvotes': -1 };
+            const updatedTarget = await Model.findByIdAndUpdate(
+              targetId,
+              { $inc: increment },
+              { new: true }
+            );
+
+            return {
+              success: true,
+              message: 'Vote cancelled',
+              voteCount: updatedTarget.votes,
+            };
+          } else if (existingVote.voteType === voteType) {
             return {
               success: false,
               message: `You have already ${voteType}d this ${targetType.toLowerCase()}`,
@@ -466,6 +486,13 @@ const resolvers = {
             };
           }
         } else {
+          if (voteType === 'cancel') {
+            return {
+              success: false,
+              message: 'No existing vote to cancel',
+              voteCount: target.votes,
+            };
+          }Ï
           // create new vote
           const vote = new Vote({
             userId,
