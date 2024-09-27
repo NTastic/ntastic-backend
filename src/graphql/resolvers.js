@@ -589,6 +589,7 @@ const resolvers = {
     contentType: (parent) => parent.contentType,
     length: (parent) => parent.length,
     uploadDate: (parent) => parent.uploadDate,
+    url: (img, _, context) => `${getBaseUrl(context)}/images/${img.id}}`,
   },
   User: {
     questions: async (user) => {

@@ -65,6 +65,7 @@ const typeDefs = gql`
     contentType: String!
     length: Int!
     uploadDate: Date
+    url: String!
   }
 
   enum SortOrder {
