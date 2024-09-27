@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
-import { validateUser } from '../utils/user.js';
+import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
 import { getBaseUrl } from '../utils/url.js';
 
 const { ObjectId } = mongoose.Types;
@@ -52,81 +52,43 @@ const resolvers = {
     getQuestion: async (_, { id }) => {
       return await Question.findById(id);
     },
-    getQuestions: async (_, { tagIds, tagMatch = 'ANY', page = 1, limit = 10, sortOrder = 'DESC' }) => {
-      try {
-        const skip = (page - 1) * limit;
+    getQuestions: async (_, { tagIds, tagMatch = 'ANY', userId, page = 1, limit = 10, sortOrder = 'DESC' }) => {
 
-        const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
-
-        // Build filter options
-        let filterOptions = {};
-        if (tagIds && tagIds.length > 0) {
-          const tagObjectIds = tagIds;
-          if (tagMatch === 'ALL') {
-            filterOptions.tagIds = { $all: tagObjectIds };
-          } else {
-            // 'ANY' match
-            filterOptions.tagIds = { $in: tagObjectIds };
-          }
+      // Build filter options
+      let filterOptions = {};
+      if (tagIds && tagIds.length > 0) {
+        const tagObjectIds = tagIds;
+        if (tagMatch === 'ALL') {
+          filterOptions.tagIds = { $all: tagObjectIds };
+        } else {
+          // 'ANY' match
+          filterOptions.tagIds = { $in: tagObjectIds };
         }
-
-        const totalItems = await Question.countDocuments(filterOptions);
-
-        const totalPages = Math.ceil(totalItems / limit);
-
-        const items = await Question.find(filterOptions)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(limit)
-          .populate([
-            { path: 'authorId', model: 'User' },
-            { path: 'tagIds', model: 'Tag' },
-          ]);
-
-        return {
-          items,
-          totalItems,
-          totalPages,
-          currentPage: page,
-        };
-      } catch (err) {
-        console.error('Error fetching questions:', err);
-        throw new Error('Error fetching questions');
       }
+      if (userId) filterOptions.authorId = userId;
+      const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
+      return await pagingQuery(Question, page, limit, filterOptions, sortOptions, [
+        { path: 'authorId', model: 'User' },
+        { path: 'tagIds', model: 'Tag' },
+      ]);
     },
 
     // get answer
     getAnswer: async (_, { id }) => {
       return await Answer.findById(id);
     },
-    getAnswers: async (_, { questionId, page = 1, limit = 10, sortOrder = 'ASC' }) => {
-      try {
-        const skip = (page - 1) * limit;
+    getAnswers: async (_, { questionId, userId, page = 1, limit = 10, sortOrder = 'ASC' }) => {
+      if (!questionId && !userId) throw new Error("At least one of the QuestionId and UserId must be present");
 
-        const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
+      const sortOptions = { createdAt: sortOrder === 'ASC' ? 1 : -1 };
 
-        const filterOptions = { questionId: questionId };
+      const filterOptions = {};
+      if (questionId) filterOptions.questionId = questionId;
+      if (userId) filterOptions.authorId = userId;
 
-        const totalItems = await Answer.countDocuments(filterOptions);
-        const totalPages = Math.ceil(totalItems / limit);
-        const items = await Answer.find(filterOptions)
-          .sort(sortOptions)
-          .skip(skip)
-          .limit(limit)
-          .populate([
-            { path: 'authorId', model: 'User' },
-          ]);
-
-        return {
-          items,
-          totalItems,
-          totalPages,
-          currentPage: page,
-        };
-      } catch (err) {
-        console.error('Error fetching answers:', err);
-        throw new Error('Error fetching answers');
-      }
+      return await pagingQuery(Answer, page, limit, filterOptions, sortOptions, [
+        { path: 'authorId', model: 'User' },
+      ]);
     },
 
     // get image
@@ -591,12 +553,6 @@ const resolvers = {
     uploadDate: (parent) => parent.uploadDate,
   },
   User: {
-    questions: async (user) => {
-      return await Question.find({ authorId: user.id });
-    },
-    answers: async (user) => {
-      return await Answer.find({ authorId: user.id });
-    },
     avatar: async (parent, _, context) => {
       if (!parent.avatarImageId) return null;
       return `${getBaseUrl(context)}/images/${parent.avatarImageId}`;

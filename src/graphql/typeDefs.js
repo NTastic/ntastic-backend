@@ -12,8 +12,6 @@ const typeDefs = gql`
     avatarImageId: ID
     createdAt: Date!
     updatedAt: Date
-    questions: [Question]
-    answers: [Answer]
   }
 
   type Tag {
@@ -127,6 +125,7 @@ const typeDefs = gql`
     getQuestions(
       tagIds: [ID!]
       tagMatch: TagMatchType = ANY
+      userId: ID
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = DESC
@@ -134,7 +133,8 @@ const typeDefs = gql`
 
     getAnswer(id: ID!): Answer
     getAnswers(
-      questionId: ID!
+      questionId: ID
+      userId: ID
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = ASC
