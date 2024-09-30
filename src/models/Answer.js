@@ -5,6 +5,7 @@ const AnswerSchema = new mongoose.Schema({
   content: { type: String, required: true },
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   imageIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'images.files' }],
+  externalImageUrls: [{ type: String }],
   votes: {
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },

@@ -12,7 +12,7 @@ import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
 import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
-import { getBaseUrl } from '../utils/url.js';
+import { getBaseUrl, validateUrls } from '../utils/url.js';
 
 const { ObjectId } = mongoose.Types;
 
@@ -28,8 +28,12 @@ const resolvers = {
     getUser: async (_, { id }) => {
       return await User.findById(id);
     },
-    getUsers: async () => {
-      return await User.find();
+    getUsers: async (_, { page = 1, limit = 10, sortField = 'username', sortOrder = 'ASC' }, { userId }) => {
+      await validateUser(userId);
+      const field = sortField || 'username';
+      const order = sortOrder === 'DESC' ? -1 : 1;
+      const sortOptions = { [field]: order };
+      return await pagingQuery(User, page, limit, {}, sortOptions);
     },
 
     // get Tag
@@ -267,7 +271,7 @@ const resolvers = {
       };
     },
 
-    createQuestion: async (_, { title, content, tagIds, imageIds }, { userId }) => {
+    createQuestion: async (_, { title, content, tagIds, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
 
       if (!tagIds || tagIds.length === 0) {
@@ -279,12 +283,17 @@ const resolvers = {
         throw new Error('Invalid tag IDs');
       }
 
+      if (externalImageUrls && externalImageUrls.length > 0) {
+        validateUrls(externalImageUrls);
+      }
+
       const question = new Question({
         title,
         content,
         authorId: userId,
         tagIds,
         imageIds,
+        externalImageUrls,
       });
 
       const savedQuestion = await question.save();
@@ -303,7 +312,7 @@ const resolvers = {
       return savedQuestion;
     },
 
-    updateQuestion: async (_, { id, title, content, tagIds, imageIds }, { userId }) => {
+    updateQuestion: async (_, { id, title, content, tagIds, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
       const question = await Question.findById(id);
       if (!question) throw new Error('Question not found');
@@ -320,6 +329,10 @@ const resolvers = {
       }
       if (imageIds) {
         question.imageIds = imageIds.map((id) => new ObjectId(id));
+      }
+      if (externalImageUrls) {
+        validateUrls(externalImageUrls);
+        question.externalImageUrls = externalImageUrls
       }
       return await question.save();
     },
@@ -362,23 +375,24 @@ const resolvers = {
       return true;
     },
 
-    createAnswer: async (_, { questionId, content, imageIds }, { userId }) => {
+    createAnswer: async (_, { questionId, content, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
 
       const question = await Question.findById(questionId);
       if (!question) throw new Error('Question not found');
-
+      if (externalImageUrls && externalImageUrls.length > 0) validateUrls(externalImageUrls);
       const answer = new Answer({
         questionId,
         content,
         authorId: userId,
         imageIds,
+        externalImageUrls,
       });
 
       return await answer.save();
     },
 
-    updateAnswer: async (_, { id, content, imageIds }, { userId }) => {
+    updateAnswer: async (_, { id, content, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
 
       const answer = await Answer.findById(id);
@@ -390,6 +404,10 @@ const resolvers = {
       }
       if (imageIds) {
         answer.imageIds = imageIds;
+      }
+      if (externalImageUrls) {
+        validateUrls(externalImageUrls);
+        answer.externalImageUrls = externalImageUrls;
       }
       return await answer.save();
     },
@@ -492,7 +510,7 @@ const resolvers = {
               message: 'No existing vote to cancel',
               voteCount: target.votes,
             };
-          }Ï
+          } Ï
           // create new vote
           const vote = new Vote({
             userId,
@@ -670,8 +688,11 @@ const resolvers = {
 
   Question: {
     images: async (question, _, context) => {
-      if (!question.imageIds || question.imageIds.length === 0) return [];
-      return question.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`);
+      const internalImages = question.imageIds && question.imageIds.length > 0
+        ? question.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`)
+        : [];
+      const externalImages = question.externalImageUrls || [];
+      return [...internalImages, ...externalImages];
     },
     author: async (question) => {
       return await User.findById(question.authorId);
@@ -686,8 +707,11 @@ const resolvers = {
 
   Answer: {
     images: async (answer, _, context) => {
-      if (!answer.imageIds || answer.imageIds.length === 0) return [];
-      return answer.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`);
+      const internalImages = answer.imageIds && answer.imageIds.length > 0
+        ? answer.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`)
+        : [];
+      const externalImages = answer.externalImageUrls || [];
+      return [...internalImages, ...externalImages];
     },
     author: async (answer) => {
       return await User.findById(answer.authorId);
@@ -701,6 +725,10 @@ const resolvers = {
     user: async (vote) => {
       return await User.findById(vote.userId);
     },
+  },
+
+  Pageable: {
+    __resolveType: (obj) => obj.constructor.modelName,
   },
 };
 

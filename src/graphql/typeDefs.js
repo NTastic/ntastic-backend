@@ -32,6 +32,7 @@ const typeDefs = gql`
     content: String!
     imageIds: [ID!]
     images: [String]
+    externalImageUrls: [String]
     author: User!
     tags: [Tag!]!
     createdAt: Date!
@@ -45,6 +46,7 @@ const typeDefs = gql`
     content: String!
     imageIds: [ID!]
     images: [String]
+    externalImageUrls: [String]
     author: User!
     question: Question!
     createdAt: Date!
@@ -111,15 +113,10 @@ const typeDefs = gql`
     user: User!
   }
 
-  type QuestionPagination {
-    items: [Question!]!
-    totalItems: Int!
-    totalPages: Int!
-    currentPage: Int!
-  }
+  union Pageable = User | Question | Answer
 
-  type AnswerPagination {
-    items: [Answer!]!
+  type Pagination {
+    items: [Pageable!]!
     totalItems: Int!
     totalPages: Int!
     currentPage: Int!
@@ -127,7 +124,12 @@ const typeDefs = gql`
 
   type Query {
     getUser(id: ID!): User
-    getUsers: [User]
+    getUsers(
+      page: Int = 1
+      limit: Int = 10
+      sortField: String = username
+      sortOrder: SortOrder = ASC
+    ): Pagination!
 
     getTag(id: ID!): Tag
     getTags(
@@ -143,7 +145,7 @@ const typeDefs = gql`
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = DESC
-    ): QuestionPagination!
+    ): Pagination!
 
     getAnswer(id: ID!): Answer
     getAnswers(
@@ -152,7 +154,7 @@ const typeDefs = gql`
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = ASC
-    ): AnswerPagination!
+    ): Pagination!
 
     getImage(id: ID!): Image
     getUserImages: [Image!]!
@@ -190,7 +192,8 @@ const typeDefs = gql`
       title: String!,
       content: String!,
       tagIds: [ID!]!,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Question
 
     updateQuestion(
@@ -198,7 +201,8 @@ const typeDefs = gql`
       title: String,
       content: String,
       tagIds: [ID!],
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Question
 
     deleteQuestion(id: ID!): Boolean!
@@ -206,13 +210,15 @@ const typeDefs = gql`
     createAnswer(
       questionId: ID!,
       content: String!,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Answer
 
     updateAnswer(
       id: ID!,
       content: String,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Answer
 
     deleteAnswer(id: ID!): Boolean!
