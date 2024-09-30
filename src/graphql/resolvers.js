@@ -153,7 +153,7 @@ const resolvers = {
 
   Mutation: {
     // register user
-    register: async (_, { username, email, password }, { SECRET_KEY }) => {
+    register: async (_, { username, email, password, phone, isBot = false }, { SECRET_KEY }) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) throw new Error('Email already registered');
 
@@ -162,6 +162,8 @@ const resolvers = {
         username,
         email,
         password: hashedPassword,
+        phone,
+        isBot,
       });
       // save to database
       const res = await user.save();
@@ -190,11 +192,12 @@ const resolvers = {
       };
     },
 
-    updateUser: async (_, { username, avatarImageId }, { userId }) => {
+    updateUser: async (_, { username, avatarImageId, phone }, { userId }) => {
       const user = await validateUser(userId);
 
       user.username = username || user.username;
       user.avatarImageId = avatarImageId || user.avatarImageId;
+      user.phone = phone || user.phone;
       user.updatedAt = new Date();
 
       await user.save();
@@ -317,7 +320,7 @@ const resolvers = {
       const question = await Question.findById(id);
       if (!question) throw new Error('Question not found');
       if (question.authorId.toString() !== userId) throw new Error('Cannot edit other users\' content');
-      if (!title && !content && (!tagIds || tagIds.length === 0) && !imageIds) return question;
+      if (!title && !content && (!tagIds || tagIds.length === 0) && !imageIds && !externalImageUrls) return question;
       if (title) {
         question.title = title.trim();
       }
@@ -398,7 +401,7 @@ const resolvers = {
       const answer = await Answer.findById(id);
       if (!answer) throw new Error('Question not found');
       if (answer.authorId.toString() !== userId) throw new Error('Cannot edit other users\' content');
-      if (!content && !imageIds) return answer;
+      if (!content && !imageIds && !externalImageUrls) return answer;
       if (content && content.trim()) {
         answer.content = content.trim();
       }
