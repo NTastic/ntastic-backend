@@ -113,15 +113,10 @@ const typeDefs = gql`
     user: User!
   }
 
-  type QuestionPagination {
-    items: [Question!]!
-    totalItems: Int!
-    totalPages: Int!
-    currentPage: Int!
-  }
+  union Pageable = User | Question | Answer
 
-  type AnswerPagination {
-    items: [Answer!]!
+  type Pagination {
+    items: [Pageable!]!
     totalItems: Int!
     totalPages: Int!
     currentPage: Int!
@@ -129,7 +124,12 @@ const typeDefs = gql`
 
   type Query {
     getUser(id: ID!): User
-    getUsers: [User]
+    getUsers(
+      page: Int = 1
+      limit: Int = 10
+      sortField: String = username
+      sortOrder: SortOrder = ASC
+    ): Pagination!
 
     getTag(id: ID!): Tag
     getTags(
@@ -145,7 +145,7 @@ const typeDefs = gql`
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = DESC
-    ): QuestionPagination!
+    ): Pagination!
 
     getAnswer(id: ID!): Answer
     getAnswers(
@@ -154,7 +154,7 @@ const typeDefs = gql`
       page: Int = 1
       limit: Int = 10
       sortOrder: SortOrder = ASC
-    ): AnswerPagination!
+    ): Pagination!
 
     getImage(id: ID!): Image
     getUserImages: [Image!]!

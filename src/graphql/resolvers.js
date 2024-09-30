@@ -28,8 +28,12 @@ const resolvers = {
     getUser: async (_, { id }) => {
       return await User.findById(id);
     },
-    getUsers: async () => {
-      return await User.find();
+    getUsers: async (_, { page = 1, limit = 10, sortField = 'username', sortOrder = 'ASC' }, { userId }) => {
+      await validateUser(userId);
+      const field = sortField || 'username';
+      const order = sortOrder === 'DESC' ? -1 : 1;
+      const sortOptions = { [field]: order };
+      return await pagingQuery(User, page, limit, {}, sortOptions);
     },
 
     // get Tag
@@ -721,6 +725,10 @@ const resolvers = {
     user: async (vote) => {
       return await User.findById(vote.userId);
     },
+  },
+
+  Pageable: {
+    __resolveType: (obj) => obj.constructor.modelName,
   },
 };
 
