@@ -32,6 +32,7 @@ const typeDefs = gql`
     content: String!
     imageIds: [ID!]
     images: [String]
+    externalImageUrls: [String]
     author: User!
     tags: [Tag!]!
     createdAt: Date!
@@ -45,6 +46,7 @@ const typeDefs = gql`
     content: String!
     imageIds: [ID!]
     images: [String]
+    externalImageUrls: [String]
     author: User!
     question: Question!
     createdAt: Date!
@@ -190,7 +192,8 @@ const typeDefs = gql`
       title: String!,
       content: String!,
       tagIds: [ID!]!,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Question
 
     updateQuestion(
@@ -198,7 +201,8 @@ const typeDefs = gql`
       title: String,
       content: String,
       tagIds: [ID!],
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Question
 
     deleteQuestion(id: ID!): Boolean!
@@ -206,13 +210,15 @@ const typeDefs = gql`
     createAnswer(
       questionId: ID!,
       content: String!,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Answer
 
     updateAnswer(
       id: ID!,
       content: String,
-      imageIds: [ID!]
+      imageIds: [ID!],
+      externalImageUrls: [String!]
     ): Answer
 
     deleteAnswer(id: ID!): Boolean!
