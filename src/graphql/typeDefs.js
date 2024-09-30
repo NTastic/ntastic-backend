@@ -10,6 +10,8 @@ const typeDefs = gql`
     email: String!
     avatar: String
     avatarImageId: ID
+    isBot: Boolean!
+    phone: String
     createdAt: Date!
     updatedAt: Date
   }
@@ -161,10 +163,16 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    register(username: String!, email: String!, password: String!): AuthPayload
+    register(
+      username: String!
+      email: String!
+      password: String!
+      phone: String
+      isBot: Boolean = false
+    ): AuthPayload
     login(email: String!, password: String!): AuthPayload
 
-    updateUser(username: String, avatarImageId: ID): User
+    updateUser(username: String, avatarImageId: ID, phone: String): User
 
     createTag(
       name: String!,
