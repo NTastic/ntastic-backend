@@ -6,6 +6,8 @@ dotenvFlow.config();
 let gfs;
 let gridfsBucket;
 
+export const IMAGES = 'images';
+export const IMAGES_FILES = IMAGES + ".files";
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI);
@@ -13,11 +15,11 @@ const connectDB = async () => {
 
     const db = mongoose.connection.db;
     gridfsBucket = new mongoose.mongo.GridFSBucket(db, {
-      bucketName: 'images',
+      bucketName: IMAGES,
     });
 
     gfs = Grid(db, mongoose.mongo)
-    gfs.collection('images');
+    gfs.collection(IMAGES);
 
     console.log('GridFS connected');
   } catch (err) {

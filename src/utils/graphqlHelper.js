@@ -1,4 +1,4 @@
-import User from '../models/User.js';
+import { User } from '../models/index.js';
 
 export const validateUser = async (userId) => {
   if (!userId) throw new Error('Authentication required');
@@ -8,7 +8,11 @@ export const validateUser = async (userId) => {
   return user;
 };
 
-export const pagingQuery = async (model, page = 1, limit = 10, filterOptions = {}, sortOptions = {}, populate = []) => {
+export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, populate = []) => {
+  const { page = 1, limit = 10, sortField = 'createdAt', sortOrder = 'ASC' } = pageOptions;
+  const order = sortOrder === 'ASC' ? 1 : -1;
+  const sortOptions = { [sortField]: order };
+
   const skip = (page - 1) * limit;
   const totalItems = await model.countDocuments(filterOptions);
   const totalPages = Math.ceil(totalItems / limit);

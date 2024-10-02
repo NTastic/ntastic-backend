@@ -1,21 +1,6 @@
 import { gql } from 'apollo-server';
 
-const typeDefs = gql`
-  scalar Date
-  scalar Upload
-
-  type User {
-    id: ID!
-    username: String!
-    email: String!
-    avatar: String
-    avatarImageId: ID
-    isBot: Boolean!
-    phone: String
-    createdAt: Date!
-    updatedAt: Date
-  }
-
+const communityTypeDefs = gql`
   type Tag {
     id: ID!
     name: String!
@@ -56,30 +41,6 @@ const typeDefs = gql`
     votes: VoteCount!
   }
 
-  type VoteCount {
-    upvotes: Int!
-    downvotes: Int!
-  }
-  
-  type Image {
-    id: ID!
-    filename: String!
-    contentType: String!
-    length: Int!
-    uploadDate: Date
-    url: String!
-  }
-
-  enum SortOrder {
-    ASC
-    DESC
-  }
-
-  enum TagMatchType {
-    ANY
-    ALL
-  }
-
   enum TagSortField {
     name
     questionCount
@@ -95,44 +56,7 @@ const typeDefs = gql`
     Answer
   }
 
-  enum VoteType {
-    upvote
-    downvote
-    cancel
-  }
-
-  type Vote {
-    id: ID!
-    user: User!
-    targetId: ID!
-    targetType: TargetType!,
-    voteType: VoteType!
-    createdAt: Date!
-  }
-
-  type AuthPayload {
-    token: String!
-    user: User!
-  }
-
-  union Pageable = User | Question | Answer
-
-  type Pagination {
-    items: [Pageable!]!
-    totalItems: Int!
-    totalPages: Int!
-    currentPage: Int!
-  }
-
   type Query {
-    getUser(id: ID!): User
-    getUsers(
-      page: Int = 1
-      limit: Int = 10
-      sortField: String = username
-      sortOrder: SortOrder = ASC
-    ): Pagination!
-
     getTag(id: ID!): Tag
     getTags(
       sort: TagSortInput = { field: name, order: ASC }
@@ -142,38 +66,28 @@ const typeDefs = gql`
     getQuestion(id: ID!): Question
     getQuestions(
       tagIds: [ID!]
-      tagMatch: TagMatchType = ANY
+      tagMatch: MatchType = ANY
       userId: ID
-      page: Int = 1
-      limit: Int = 10
-      sortOrder: SortOrder = DESC
+      pageOptions: PageOptions = {
+        page: 1
+        limit: 10
+        sortOrder: DESC
+      }
     ): Pagination!
 
     getAnswer(id: ID!): Answer
     getAnswers(
       questionId: ID
       userId: ID
-      page: Int = 1
-      limit: Int = 10
-      sortOrder: SortOrder = ASC
+      pageOptions: PageOptions = {
+        page: 1
+        limit: 10
+        sortOrder: ASC
+      }
     ): Pagination!
-
-    getImage(id: ID!): Image
-    getUserImages: [Image!]!
   }
 
   type Mutation {
-    register(
-      username: String!
-      email: String!
-      password: String!
-      phone: String
-      isBot: Boolean = false
-    ): AuthPayload
-    login(email: String!, password: String!): AuthPayload
-
-    updateUser(username: String, avatarImageId: ID, phone: String): User
-
     createTag(
       name: String!,
       description: String,
@@ -230,22 +144,6 @@ const typeDefs = gql`
     ): Answer
 
     deleteAnswer(id: ID!): Boolean!
-
-    vote(
-      targetId: ID!,
-      targetType: String!,
-      voteType: String!
-    ): VoteResponse
-
-    uploadImage(file: Upload!): Image!
-
-    deleteImage(imageId: ID!): Boolean!
-  }
-
-  type VoteResponse {
-    success: Boolean!
-    message: String
-    voteCount: VoteCount
   }
 
   type MergeTagsResponse {
@@ -255,4 +153,4 @@ const typeDefs = gql`
   }
 `;
 
-export default typeDefs;
+export default communityTypeDefs;
