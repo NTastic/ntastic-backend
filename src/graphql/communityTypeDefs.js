@@ -25,7 +25,7 @@ const communityTypeDefs = gql`
     createdAt: Date!
     updatedAt: Date
     votes: VoteCount!
-    answers: [Answer]
+    answers: Pagination!
   }
 
   type Answer {

@@ -43,6 +43,8 @@ const commonTypeDefs = gql`
   enum TargetType {
     Question
     Answer
+    POI
+    Comment
   }
 
   enum VoteType {

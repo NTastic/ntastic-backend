@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
-import { User, Question, Answer, Vote } from '../models/index.js';
-import mongoose, { modelNames } from 'mongoose';
+import { User, Question, Answer, POI, Comment, Vote } from '../models/index.js';
+import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
@@ -133,15 +133,24 @@ const commonResolvers = {
     vote: async (_, { targetId, targetType, voteType }, { userId }) => {
       await validateUser(userId);
 
-      if (!['Question', 'Answer'].includes(targetType)) {
-        throw new Error('Invalid target type');
-      }
-
       if (!['upvote', 'downvote', 'cancel'].includes(voteType)) {
         throw new Error('Invalid vote type');
       }
-
-      const Model = targetType === 'Question' ? Question : Answer;
+      let Model;
+      switch(targetType) {
+        case 'Question':
+          Model = Question;
+          break;
+        case 'Answer':
+          Model = Answer;
+        case 'POI':
+          Model = POI;
+        case 'Comment':
+          Model = Comment;
+          break
+        default:
+          throw new Error('Invalid target type');
+      }
       const target = await Model.findById(targetId);
       if (!target) throw new Error(`${targetType} not found`);
 

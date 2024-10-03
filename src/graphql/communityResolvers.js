@@ -5,6 +5,7 @@ import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
 import { MODEL_USER } from '../models/user.js';
 import { MODEL_TAG } from '../models/community/tag.js';
+import { nonEmptyArray } from '../utils/common.js';
 
 const { ObjectId } = mongoose.Types;
 
@@ -40,7 +41,7 @@ const communityResolvers = {
     getQuestions: async (_, { tagIds, tagMatch = 'ANY', userId, pageOptions, }) => {
       // Build filter options
       let filterOptions = {};
-      if (tagIds && tagIds.length > 0) {
+      if (nonEmptyArray(tagIds)) {
         const tagObjectIds = tagIds;
         if (tagMatch === 'ALL') {
           filterOptions.tagIds = { $all: tagObjectIds };
@@ -79,6 +80,7 @@ const communityResolvers = {
       await validateUser(userId);
 
       const formattedName = name.trim();
+      if (!formattedName) throw new Error("Invalid Tag name");
       const slug = formattedName.toLowerCase().replace(/\s+/g, '-');
 
       const existingTag = await Tag.findOne({ slug });
@@ -156,7 +158,7 @@ const communityResolvers = {
         throw new Error('Invalid tag IDs');
       }
 
-      if (externalImageUrls && externalImageUrls.length > 0) {
+      if (nonEmptyArray(externalImageUrls)) {
         validateUrls(externalImageUrls);
       }
 
@@ -191,17 +193,17 @@ const communityResolvers = {
       if (!question) throw new Error('Question not found');
       if (question.authorId.toString() !== userId) throw new Error('Cannot edit other users\' content');
       if (!title && !content && (!tagIds || tagIds.length === 0) && !imageIds && !externalImageUrls) return question;
-      if (title) {
+      if (title.trim()) {
         question.title = title.trim();
       }
       if (content && content.trim()) {
         question.content = content.trim();
       }
-      if (tagIds && tagIds.length >= 0) {
-        question.tagIds = tagIds.map((id) => new ObjectId(id));
+      if (nonEmptyArray(tagIds)) {
+        question.tagIds = tagIds;
       }
       if (imageIds) {
-        question.imageIds = imageIds.map((id) => new ObjectId(id));
+        question.imageIds = imageIds;
       }
       if (externalImageUrls) {
         validateUrls(externalImageUrls);
@@ -233,7 +235,7 @@ const communityResolvers = {
       );
 
       // delete associated images
-      if (question.imageIds && question.imageIds.length > 0) {
+      if (nonEmptyArray(question.imageIds)) {
         for (const imageId of question.imageIds) {
           try {
             await deleteImage(imageId, userId);
@@ -253,7 +255,7 @@ const communityResolvers = {
 
       const question = await Question.findById(questionId);
       if (!question) throw new Error('Question not found');
-      if (externalImageUrls && externalImageUrls.length > 0) validateUrls(externalImageUrls);
+      if (nonEmptyArray(externalImageUrls)) validateUrls(externalImageUrls);
       const answer = new Answer({
         questionId,
         content,
@@ -299,7 +301,7 @@ const communityResolvers = {
       }
 
       // delete associated images
-      if (answer.imageIds && answer.imageIds.length > 0) {
+      if (nonEmptyArray(answer.imageIds)) {
         for (const imageId of answer.imageIds) {
           try {
             await deleteImage(imageId, userId);
@@ -322,7 +324,7 @@ const communityResolvers = {
 
   Question: {
     images: async (question, _, context) => {
-      const internalImages = question.imageIds && question.imageIds.length > 0
+      const internalImages = nonEmptyArray(question.imageIds)
         ? question.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`)
         : [];
       const externalImages = question.externalImageUrls || [];
@@ -335,13 +337,13 @@ const communityResolvers = {
       return await Tag.find({ _id: { $in: question.tagIds } });
     },
     answers: async (question) => {
-      return await Answer.find({ questionId: question.id });
+      return await pagingQuery(Answer, {}, { questionId: question.id });
     },
   },
 
   Answer: {
     images: async (answer, _, context) => {
-      const internalImages = answer.imageIds && answer.imageIds.length > 0
+      const internalImages = nonEmptyArray(answer.imageIds)
         ? answer.imageIds.map(id => `${getBaseUrl(context)}/images/${id}`)
         : [];
       const externalImages = answer.externalImageUrls || [];

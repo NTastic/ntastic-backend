@@ -8,9 +8,9 @@ const PoiSchema = new mongoose.Schema({
   address: { type: String },
   location: {
     type: { type: String, enum: ['Point'], default: 'Point' },
-    cordinates: { type: [Number] },
+    coordinates: { type: [Number] },
   },
-  categoryIds: [{
+  catIds: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: MODEL_CATEGORY,
     required: true,
@@ -21,6 +21,10 @@ const PoiSchema = new mongoose.Schema({
   photoUrls: [{ type: String }],
   workingHours: [{ day: String, open: String, close: String }],
   website: { type: String },
+  votes: {
+    upvotes: { type: Number, default: 0 },
+    downvotes: { type: Number, default: 0 },
+  },
 }, { timestamps: true });
 
 PoiSchema.index({ location: '2dsphere' });

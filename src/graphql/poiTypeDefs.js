@@ -7,7 +7,7 @@ const poiTypeDefs = gql`
     slug: String!
     description: String
     parentCat: Category
-    subCat: [Category!]
+    subCats: [Category]
     poiCount: Int!
     createdAt: Date!
     updatedAt: Date
@@ -16,9 +16,10 @@ const poiTypeDefs = gql`
   type Comment {
     id: ID!
     poi: POI!
-    author: User!,
+    author: User!
     content: String!
     rating: Float!
+    imageUrls: [String!]
     createdAt: Date!
     updatedAt: Date
   }
@@ -29,7 +30,7 @@ const poiTypeDefs = gql`
     phone: String
     address: String
     location: Location
-    categoryIds: [ID!]!
+    catIds: [ID!]!
     rating: Float!
     reviewsCount: Int!
     photoUrls: [String!]
@@ -73,8 +74,8 @@ const poiTypeDefs = gql`
     name: String
     phone: String
     address: String
-    location: LocationInput
-    categoryIds: [ID!]
+    locationInput: LocationInput
+    catIds: [ID!]
     photoUrls: [String!]
     workingHours: [WorkingHourInput]
     website: String
@@ -84,29 +85,33 @@ const poiTypeDefs = gql`
     poiId: ID!
     content: String!
     rating: Float!
+    imageUrls: [String!]
   }
 
   type Query {
-    getCategories(parentCatId: ID = null): Category
+    getCategories(catIds: [ID!] = null): [Category!]
     getPOIs(
-      categoryIds: [ID!]
+      catIds: [ID!]
       catMatch: MatchType = ANY
       pageOptions: PageOptions
     ): Pagination!
-    getComments(poiId: ID!, pageOptions: PageOptions): Pagination!
+    getComments(
+      poiId: ID!
+      pageOptions: PageOptions
+    ): Pagination!
   }
 
   type Mutation {
     createCategory(input: CategoryInput): Category
-    updateCategory(input: CategoryInput): Category
+    updateCategory(id: ID!, input: CategoryInput): Category
     deleteCategory(id: ID!): Response
 
     createPOI(input: POIInput): POI
-    updatePOI(input: POIInput): POI
+    updatePOI(id: ID!, input: POIInput): POI
     deletePOI(id: ID!): Response
 
     createComment(input: CommentInput): Comment
-    updateComment(input: CommentInput): Comment
+    updateComment(id: ID!, input: CommentInput): Comment
     deleteComment(id: ID!): Response
   }
 `;
