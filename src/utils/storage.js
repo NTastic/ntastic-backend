@@ -1,7 +1,6 @@
-import { MAX_STORAGE_PER_USER, MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '../config/storage.js';
+import { MAX_STORAGE_PER_MODEL_USER, MAX_FILE_SIZE, ALLOWED_MIME_TYPES } from '../config/storage.js';
 import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
-import User from '../models/User.js';
 
 const { ObjectId } = mongoose.Types;
 
@@ -22,8 +21,8 @@ export const validateFile = (mimetype, size) => {
  * Check if the user has enough storage to upload a file of given size.
  */
 export const checkStorageLimit = (user, newFileSize) => {
-  if (user.imageStorageUsed + newFileSize > MAX_STORAGE_PER_USER) {
-    throw new Error(`Uploading this file would exceed your storage limit of ${MAX_STORAGE_PER_USER / (1024 * 1024)} MB`);
+  if (user.imageStorageUsed + newFileSize > MAX_STORAGE_PER_MODEL_USER) {
+    throw new Error(`Uploading this file would exceed your storage limit of ${MAX_STORAGE_PER_MODEL_USER / (1024 * 1024)} MB`);
   }
 };
 

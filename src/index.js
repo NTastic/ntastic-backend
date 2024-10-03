@@ -9,8 +9,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import dotenvFlow from 'dotenv-flow';
 
-import typeDefs from './graphql/typeDefs.js';
-import resolvers from './graphql/resolvers.js';
+import { typeDefs, resolvers } from './graphql/schema.js';
 import { connectDB } from './gridfs.js';
 import { imagesEndpoint } from './utils/image.js';
 

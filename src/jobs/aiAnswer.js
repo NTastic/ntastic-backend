@@ -1,7 +1,5 @@
 import Bull from 'bull';
-import User from '../models/User.js';
-import Question from '../models/Question.js';
-import Answer from '../models/Answer.js';
+import { User, Question, Answer } from '../models/index.js';
 import OpenAI from 'openai';
 import dotenvFlow from 'dotenv-flow';
 dotenvFlow.config();
@@ -30,7 +28,7 @@ aiAnswerQueue.process(async (job) => {
     throw new Error(`Not found question with ID ${questionId}`);
   }
 
-  const aiBotUser = await User.findOne({ username: process.env.AI_BOT_USERNAME });
+  const aiBotUser = await User.findOne({ username: process.env.AI_BOT_MODEL_USERNAME });
   if (!aiBotUser) {
     throw new Error('Not found user AI-bot');
   }

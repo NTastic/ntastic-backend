@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/NTastic/ntastic-backend#readme",
   "dependencies": {
+    "@graphql-tools/merge": "^9.0.7",
     "apollo-server": "^3.13.0",
     "apollo-upload-client": "^18.0.1",
     "bcryptjs": "^2.4.3",
