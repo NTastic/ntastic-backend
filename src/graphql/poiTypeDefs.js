@@ -41,6 +41,13 @@ const poiTypeDefs = gql`
     updatedAt: Date
   }
 
+  type Recommendation {
+    id: ID!
+    title: String!
+    commands: [Command!]
+    pois: [POI!]
+  }
+
   type Location {
     type: String!
     coordinates: [Float!]
@@ -90,6 +97,7 @@ const poiTypeDefs = gql`
 
   type Query {
     getCategories(catIds: [ID!] = null): [Category!]
+    getRecommendations(catIds: [ID!], pageOptions:PageOptions): Pagination!
     getPOIs(
       catIds: [ID!]
       catMatch: MatchType = ANY
@@ -102,6 +110,7 @@ const poiTypeDefs = gql`
   }
 
   type Mutation {
+    createRecommendation(): Recommendation
     createCategory(input: CategoryInput): Category
     updateCategory(id: ID!, input: CategoryInput): Category
     deleteCategory(id: ID!): Response
