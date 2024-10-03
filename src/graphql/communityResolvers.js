@@ -3,7 +3,7 @@ import aiAnswerQueue from '../jobs/aiAnswer.js';
 import mongoose from 'mongoose';
 import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
-import { MODEL_USER } from '../models/user.js';
+import { MODEL_USER } from '../models/common/user.js';
 import { MODEL_TAG } from '../models/community/tag.js';
 import { nonEmptyArray } from '../utils/common.js';
 
@@ -219,10 +219,10 @@ const communityResolvers = {
 
       const question = await Question.findById(id);
 
-      if (!question) return false;
+      if (!question) return { result: false, message: 'Question not found' };
 
       if (question.authorId.toString() !== userId) {
-        throw new Error('You are not authorized to delete this question');
+        return { result: false, message: 'You are not authorized to delete this question' };
       }
 
       // delete associated answers
@@ -247,7 +247,7 @@ const communityResolvers = {
 
       await Question.deleteOne({ _id: id });
 
-      return true;
+      return { result: true, message: 'Question deleted' };
     },
 
     createAnswer: async (_, { questionId, content, imageIds, externalImageUrls }, { userId }) => {

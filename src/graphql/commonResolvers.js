@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
-import { User, Question, Answer, POI, Comment, Vote } from '../models/index.js';
+import { User, Vote, Character, Question, Answer, POI, Comment, Category } from '../models/index.js';
 import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
@@ -118,16 +118,18 @@ const commonResolvers = {
       };
     },
 
-    updateUser: async (_, { username, avatarImageId, phone }, { userId }) => {
+    updateUser: async (_, { input }, { userId }) => {
       const user = await validateUser(userId);
 
+      const { username, avatarId, phone, charIds, faveCatIds, faveSubCatIds } = input;
       user.username = username || user.username;
-      user.avatarImageId = avatarImageId || user.avatarImageId;
+      user.avatarId = avatarId || user.avatarId;
       user.phone = phone || user.phone;
       user.updatedAt = new Date();
-
-      await user.save();
-      return user;
+      user.charIds = charIds || user.charIds;
+      user.faveCatIds = faveCatIds || user.faveCatIds;
+      user.faveSubCatIds = faveSubCatIds || user.faveSubCatIds;
+      return await user.save();
     },
 
     vote: async (_, { targetId, targetType, voteType }, { userId }) => {
@@ -137,7 +139,7 @@ const commonResolvers = {
         throw new Error('Invalid vote type');
       }
       let Model;
-      switch(targetType) {
+      switch (targetType) {
         case 'Question':
           Model = Question;
           break;
@@ -343,8 +345,8 @@ const commonResolvers = {
 
         // Remove references to the image in User, Question, and Answer documents
         await User.updateMany(
-          { avatarImageId: fileId },
-          { $unset: { avatarImageId: '' } }
+          { avatarId: fileId },
+          { $unset: { avatarId: '' } }
         );
 
         await Question.updateMany(
@@ -362,6 +364,45 @@ const commonResolvers = {
         throw new Error('Error deleting the image');
       }
     },
+
+    createCharacter: async (_, { name, description }, { userId }) => {
+      await validateUser(userId);
+      const formattedName = name.trim();
+      if (!formattedName) throw new Error("Invalid Character name");
+      const slug = formattedName.toLowerCase().replace(/\s+/g, '-');
+
+      const existingChar = await Character.findOne({ slug });
+      if (existingChar) throw new Error('Character already exists');
+      return await new Character({
+        name: formattedName,
+        slug,
+        description,
+      }).save();
+    },
+    updateCharacter: async (_, { id, name, description }, { userId }) => {
+      await validateUser(userId);
+
+      const char = await Character.findById(id);
+      if (!char) throw new Error('Character not found');
+      if (name) {
+        char.name = name.trim();
+        char.slug = char.name.toLowerCase().replace(/\s+/g, '-');
+      }
+      if (description) tag.description = description;
+      return await char.save();
+    },
+    deleteCharacter: async (_, { id }, { userId }) => {
+      await validateUser(userId);
+      const char = await Character.findById(id);
+      if (!char) return { result: false, message: 'Character not found' };
+
+      await User.updateMany(
+        { charIds: id },
+        { $pull: { charIds: id } },
+      );
+      await Character.deleteOne({ _id: id });
+      return { result: true, message: 'Character deleted' };
+    },
   },
 
   Image: {
@@ -375,9 +416,12 @@ const commonResolvers = {
 
   User: {
     avatar: async (parent, _, context) => {
-      if (!parent.avatarImageId) return null;
-      return `${getBaseUrl(context)}/images/${parent.avatarImageId}`;
+      if (!parent.avatarId) return null;
+      return `${getBaseUrl(context)}/images/${parent.avatarId}`;
     },
+    characters: async (user) => await Character.find({ _id: { $in: user.charIds } }),
+    faveCats: async (user) => await Category.find({ _id: { $in: user.faveCatIds } }),
+    faveSubCats: async (user) => await Category.find({ _id: { $in: user.faveSubCatIds } }),
   },
 
   Vote: {
