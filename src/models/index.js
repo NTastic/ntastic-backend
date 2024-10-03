@@ -1,8 +1,9 @@
-export { default as User } from './user.js';
-export { default as Vote } from './vote.js';
-export { default as Answer } from './community/answer.js';
-export { default as Question } from './community/question.js';
-export { default as Tag } from './community/tag.js';
-export { default as POI } from './poi/poi.js';
-export { default as Category } from './poi/category.js';
-export { default as Comment } from './poi/comment.js';
+export { default as User, MODEL_USER } from './common/user.js';
+export { default as Vote, MODEL_VOTE } from './common/vote.js';
+export { default as Character, MODEL_CHARACTER } from './common/character.js';
+export { default as Answer, MODEL_ANSWER } from './community/answer.js';
+export { default as Question, MODEL_QUESTION } from './community/question.js';
+export { default as Tag, MODEL_TAG } from './community/tag.js';
+export { default as POI, MODEL_POI } from './poi/poi.js';
+export { default as Category, MODEL_CATEGORY } from './poi/category.js';
+export { default as Comment, MODEL_COMMENT } from './poi/comment.js';

@@ -127,7 +127,7 @@ const communityTypeDefs = gql`
       externalImageUrls: [String!]
     ): Question
 
-    deleteQuestion(id: ID!): Boolean!
+    deleteQuestion(id: ID!): Response!
 
     createAnswer(
       questionId: ID!,

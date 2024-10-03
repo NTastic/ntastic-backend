@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { MODEL_POI } from './poi.js';
-import { MODEL_USER } from '../user.js';
+import { MODEL_USER } from '../common/user.js';
 
 export const MODEL_COMMENT = 'poi.Comment';
 const CommentSchema = new mongoose.Schema({

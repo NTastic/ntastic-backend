@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { MODEL_QUESTION } from './question.js';
-import { MODEL_USER } from '../user.js';
+import { MODEL_USER } from '../common/user.js';
 import { IMAGES_FILES } from '../../gridfs.js';
 
 export const MODEL_ANSWER = 'community.Answer';

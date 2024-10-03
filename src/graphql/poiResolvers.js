@@ -57,7 +57,7 @@ const poiResolvers = {
         subCatIds,
       }).save();
       if (parentCat) {
-        parentCat.subCatIds = (parentCat.subCatIds || []).push(cat.id);
+        parentCat.subCatIds = [...(parentCat.subCatIds || []), cat.id];
         parentCat.markModified('subCatIds');
         await parentCat.save()
       }

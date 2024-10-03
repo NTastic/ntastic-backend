@@ -9,9 +9,12 @@ const commonTypeDefs = gql`
     username: String!
     email: String!
     avatar: String
-    avatarImageId: ID
+    avatarId: ID
     isBot: Boolean!
     phone: String
+    characters: [Character!]
+    faveCats: [Category!]
+    faveSubCats: [Category!]
     createdAt: Date!
     updatedAt: Date
   }
@@ -62,6 +65,15 @@ const commonTypeDefs = gql`
     createdAt: Date!
   }
 
+  type Character {
+    id: ID!
+    name: String!
+    slug: String!
+    description: String
+    createdAt: Date!
+    updatedAt: Date
+  }
+
   type AuthPayload {
     token: String!
     user: User!
@@ -88,6 +100,15 @@ const commonTypeDefs = gql`
     order: SortOrder
   }
 
+  input UserInput {
+    username: String
+    avatarId: ID
+    phone: String
+    charIds: [ID!]
+    faveCatIds: [ID!]
+    faveSubCatIds: [ID!]
+  }
+
   type Query {
     getUser(id: ID!): User
     getUsers(
@@ -101,6 +122,8 @@ const commonTypeDefs = gql`
 
     getImage(id: ID!): Image
     getUserImages: [Image!]!
+
+    getCharacters: [Character!]
   }
 
   type Mutation {
@@ -113,7 +136,7 @@ const commonTypeDefs = gql`
     ): AuthPayload
     login(email: String!, password: String!): AuthPayload
 
-    updateUser(username: String, avatarImageId: ID, phone: String): User
+    updateUser(input: UserInput): User
 
     vote(
       targetId: ID!,
@@ -124,6 +147,17 @@ const commonTypeDefs = gql`
     uploadImage(file: Upload!): Image!
 
     deleteImage(imageId: ID!): Boolean!
+
+    createCharacter(
+      name: String!
+      description: String
+    ): Character
+    updateCharacter(
+      id: ID!
+      name: String!
+      description: String
+    ): Character
+    deleteCharacter(id: ID!): Response
   }
 
   type VoteResponse {

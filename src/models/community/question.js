@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { MODEL_USER } from '../user.js';
+import { MODEL_USER } from '../common/user.js';
 import { MODEL_TAG } from './tag.js';
 import { IMAGES_FILES } from '../../gridfs.js';
 
