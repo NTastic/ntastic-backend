@@ -9,9 +9,9 @@ export const validateUser = async (userId) => {
 };
 
 export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, populate = []) => {
-  const { page = 1, limit = 10, sortField = 'createdAt', sortOrder = 'ASC' } = pageOptions;
-  const order = sortOrder === 'ASC' ? 1 : -1;
-  const sortOptions = { [sortField]: order };
+  const { page = 1, limit = 10, sortField = 'createdAt', order = 'ASC' } = pageOptions;
+  const sortOrder = order === 'ASC' ? 1 : -1;
+  const sortOptions = { [sortField]: sortOrder };
 
   const skip = (page - 1) * limit;
   const totalItems = await model.countDocuments(filterOptions);
