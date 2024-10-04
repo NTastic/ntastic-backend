@@ -35,7 +35,7 @@ aiAnswerQueue.process(async (job) => {
 
   const messages = [
     { role: 'system', content: SYSTEM_CONTENT },
-    { role: 'user', content: `${question.content}` },
+    { role: 'user', content: `${question.title}\n${question.content}` },
   ];
 
   try {
