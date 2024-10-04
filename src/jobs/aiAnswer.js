@@ -28,7 +28,7 @@ aiAnswerQueue.process(async (job) => {
     throw new Error(`Not found question with ID ${questionId}`);
   }
 
-  const aiBotUser = await User.findOne({ username: process.env.AI_BOT_MODEL_USERNAME });
+  const aiBotUser = await User.findOne({ email: process.env.AI_BOT_EMAIL });
   if (!aiBotUser) {
     throw new Error('Not found user AI-bot');
   }
