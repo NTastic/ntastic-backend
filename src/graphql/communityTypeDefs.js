@@ -71,7 +71,7 @@ const communityTypeDefs = gql`
       pageOptions: PageOptions = {
         page: 1
         limit: 10
-        sortOrder: DESC
+        order: DESC
       }
     ): Pagination!
 
@@ -82,7 +82,7 @@ const communityTypeDefs = gql`
       pageOptions: PageOptions = {
         page: 1
         limit: 10
-        sortOrder: ASC
+        order: ASC
       }
     ): Pagination!
   }
