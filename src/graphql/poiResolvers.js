@@ -342,6 +342,7 @@ const poiResolvers = {
     },
   },
   Category: {
+    parentCat: async (cat) => await Category.findById(cat.parentCatId),
     subCats: async (cat) => await Category.find({ parentCatId: cat.id }),
   },
   Recommendation: {
