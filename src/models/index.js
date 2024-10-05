@@ -4,6 +4,7 @@ export { default as Character, MODEL_CHARACTER } from './common/character.js';
 export { default as Answer, MODEL_ANSWER } from './community/answer.js';
 export { default as Question, MODEL_QUESTION } from './community/question.js';
 export { default as Tag, MODEL_TAG } from './community/tag.js';
+export { default as Recommendation, MODEL_RECOMMENDATION } from './poi/recommendation.js';
 export { default as POI, MODEL_POI } from './poi/poi.js';
 export { default as Category, MODEL_CATEGORY } from './poi/category.js';
 export { default as Comment, MODEL_COMMENT } from './poi/comment.js';

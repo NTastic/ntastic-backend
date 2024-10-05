@@ -79,7 +79,7 @@ const commonTypeDefs = gql`
     user: User!
   }
 
-  union Pageable = User | Question | Answer | POI | Comment
+  union Pageable = User | Question | Answer | Recommendation | POI | Comment
 
   type Pagination {
     items: [Pageable!]!

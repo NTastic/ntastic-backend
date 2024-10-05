@@ -14,7 +14,6 @@ const PoiSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: MODEL_CATEGORY,
     required: true,
-    index: true,
   }],
   rating: { type: Number, min: 0, max: 5, default: 0 },
   reviewsCount: { type: Number, default: 0 },
