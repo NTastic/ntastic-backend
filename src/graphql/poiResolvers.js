@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Category, POI, Comment } from '../models/index.js';
+import { Category, Recommendation, POI, Comment } from '../models/index.js';
 import { pagingQuery, validateUser } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
 const { ObjectId } = mongoose.Types;
@@ -14,13 +14,25 @@ const poiResolvers = {
       return await Category.find(filterOptions);
     },
 
-    getPOIs: async (_, { categoryIds, catMatch = 'ANY', pageOptions }) => {
+    getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
       let filterOptions = {};
-      if (nonEmptyArray(categoryIds)) {
+      if (nonEmptyArray(catIds)) {
         if (catMatch === 'ALL') {
-          filterOptions.categoryIds = { $all: categoryIds };
+          filterOptions.catIds = { $all: catIds };
         } else {
-          filterOptions.categoryIds = { $in: categoryIds };
+          filterOptions.catIds = { $in: catIds };
+        }
+      }
+      return await pagingQuery(Recommendation, pageOptions, filterOptions);
+    },
+
+    getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
+      let filterOptions = {};
+      if (nonEmptyArray(catIds)) {
+        if (catMatch === 'ALL') {
+          filterOptions.catIds = { $all: catIds };
+        } else {
+          filterOptions.catIds = { $in: catIds };
         }
       }
       return await pagingQuery(POI, pageOptions, filterOptions);
@@ -33,6 +45,56 @@ const poiResolvers = {
     },
   },
   Mutation: {
+    createRecommendation: async (_, { input }, { userId }) => {
+      await validateUser(userId);
+      const { title, description, commentIds } = input;
+      if (!nonEmptyArray(commentIds)) throw new Error('CommentIds mush be present');
+      const comments = await Comment.find({ _id: { $in: commentIds } });
+      const poiIds = comments.map((comment) => comment.poiId);
+      const pois = await POI.find({ _id: { $in: poiIds } });
+      const catIds = Array.from(new Set(pois.map((poi) => poi.catIds)));
+      const recommendation = await Recommendation({
+        title,
+        description,
+        catIds,
+        list: comments.map((value) => ({ poiId: value.poiId, commentId: value._id })),
+      }).save();
+
+      return recommendation;
+    },
+    updateRecommendation: async (_, { id, input }, { userId }) => {
+      await validateUser(userId);
+      const recommendation = await Recommendation.findById(id);
+      if (!recommendation) throw new Error('Recommendation not found');
+      const { title, description, commentIds } = input;
+      recommendation.title = title || recommendation.title;
+      recommendation.description = description || recommendation.description;
+      if (nonEmptyArray(commentIds)) {
+        const oldCommentIds = recommendation.list.map((data) => data.commentId);
+        if (!arraysEqual(oldCommentIds, commentIds)) {
+          const comments = await Comment.find({ _id: { $in: commentIds } });
+          const poiIds = comments.map((comment) => comment.poiId);
+          const pois = await POI.find({ _id: { $in: poiIds } });
+          const catIds = Array.from(new Set(pois.map((poi) => poi.catIds)));
+          recommendation.catIds = catIds;
+          recommendation.list = comments.map((value) => ({ poiId: value.poiId, commentId: value.id }));
+        }
+      }
+      return await recommendation.save();
+    },
+    deleteRecommendation: async (_, { id }, { userId }) => {
+      await validateUser(userId);
+      const recommendation = await Recommendation.findById(id);
+      if (!recommendation) return {
+        result: false,
+        message: 'Recommendation not found',
+      }
+      await Recommendation.deleteOne({ _id: id });
+      return {
+        result: true,
+        message: 'Recommendation deleted',
+      };
+    },
     createCategory: async (_, { input }, { userId }) => {
       await validateUser(userId);
       const { name, description, parentCatId, subCatIds } = input;
@@ -281,6 +343,19 @@ const poiResolvers = {
   },
   Category: {
     subCats: async (cat) => await Category.find({ parentCatId: cat.id }),
+  },
+  Recommendation: {
+    list: async (parent) => {
+      const ids = parent.list;
+      return await Promise.all(
+        parent.list.map(async data => {
+          return {
+            poi: await POI.findById(data.poiId),
+            comment: await Comment.findById(data.commentId)
+          };
+        })
+      );
+    },
   },
   Comment: {
     poi: async (comment) => await POI.findById(comment.poiId),
