@@ -33,9 +33,11 @@ aiAnswerQueue.process(async (job) => {
     throw new Error('Not found user AI-bot');
   }
 
+  const userContent = (question.title === question.content) ? `${question.content}`
+    : `${question.title}\n${question.content}`;
   const messages = [
     { role: 'system', content: SYSTEM_CONTENT },
-    { role: 'user', content: `${question.title}\n${question.content}` },
+    { role: 'user', content: userContent },
   ];
 
   try {
