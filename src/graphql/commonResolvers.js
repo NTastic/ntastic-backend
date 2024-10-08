@@ -94,7 +94,7 @@ const commonResolvers = {
       // save to database
       const res = await user.save();
       // Optionally, generate a JWT token here
-      const token = jwt.sign({ userId: res.id }, SECRET_KEY, { expiresIn: '1d' });
+      const token = jwt.sign({ userId: res.id }, SECRET_KEY, { expiresIn: '7d' });
       return {
         token,
         user: res,
@@ -111,7 +111,7 @@ const commonResolvers = {
       }
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) throw new Error('Incorrect password');
-      const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '1d' });
+      const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '7d' });
       return {
         token,
         user,
@@ -145,8 +145,10 @@ const commonResolvers = {
           break;
         case 'Answer':
           Model = Answer;
+          break;
         case 'POI':
           Model = POI;
+          break;
         case 'Comment':
           Model = Comment;
           break
