@@ -140,8 +140,8 @@ const commonTypeDefs = gql`
 
     vote(
       targetId: ID!,
-      targetType: String!,
-      voteType: String!
+      targetType: TargetType!,
+      voteType: VoteType!
     ): VoteResponse
 
     uploadImage(file: Upload!): Image!
