@@ -211,7 +211,7 @@ const commonResolvers = {
               message: 'No existing vote to cancel',
               voteCount: target.votes,
             };
-          } Ï
+          }
           // create new vote
           const vote = new Vote({
             userId,
