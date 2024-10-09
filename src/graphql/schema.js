@@ -9,7 +9,22 @@ import communityResolvers from './communityResolvers.js'
 import poiTypeDefs from './poiTypeDefs.js';
 import poiResolvers from './poiResolvers.js';
 
-const typeDefs = mergeTypeDefs([commonTypeDefs, communityTypeDefs, poiTypeDefs]);
-const resolvers = mergeResolvers([commonResolvers, communityResolvers, poiResolvers]);
+import subTypeDefs from './subTypeDefs.js';
+import subResolvers from './subResolvers.js';
+import { makeExecutableSchema } from '@graphql-tools/schema';
 
-export { typeDefs, resolvers };
+const typeDefs = mergeTypeDefs([
+    commonTypeDefs,
+    communityTypeDefs,
+    poiTypeDefs,
+    subTypeDefs,
+]);
+const resolvers = mergeResolvers([
+    commonResolvers,
+    communityResolvers,
+    poiResolvers,
+    subResolvers,
+]);
+const schema = makeExecutableSchema({ typeDefs, resolvers, });
+
+export default schema;

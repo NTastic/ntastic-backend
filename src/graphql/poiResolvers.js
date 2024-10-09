@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Category, Recommendation, POI, Comment } from '../models/index.js';
-import { pagingQuery, validateUser } from '../utils/graphqlHelper.js';
+import { makeResponse, pagingQuery, validateUser } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
 const { ObjectId } = mongoose.Types;
 
@@ -85,15 +85,9 @@ const poiResolvers = {
     deleteRecommendation: async (_, { id }, { userId }) => {
       await validateUser(userId);
       const recommendation = await Recommendation.findById(id);
-      if (!recommendation) return {
-        result: false,
-        message: 'Recommendation not found',
-      }
+      if (!recommendation) return makeResponse('Recommendation not found');
       await Recommendation.deleteOne({ _id: id });
-      return {
-        result: true,
-        message: 'Recommendation deleted',
-      };
+      return makeResponse('Recommendation deleted', true);
     },
     createCategory: async (_, { input }, { userId }) => {
       await validateUser(userId);
@@ -195,10 +189,7 @@ const poiResolvers = {
     deleteCategory: async (_, { id }, { userId }) => {
       await validateUser(userId);
       const cat = await Category.findById(id);
-      if (!cat) return {
-        result: false,
-        message: 'Category not found',
-      };
+      if (!cat) return makeResponse('Category not found');
       await Category.updateMany(
         { parentCatId: id },
         { parentCatId: cat.parentCatId },
@@ -208,10 +199,7 @@ const poiResolvers = {
         { $pull: { subCatIds: id } },
       );
       await Category.deleteOne({ _id: id });
-      return {
-        result: true,
-        message: 'Category deleted',
-      };
+      return makeResponse('Category deleted', true);
     },
 
     createPOI: async (_, { input }, { userId }) => {
@@ -267,20 +255,14 @@ const poiResolvers = {
     deletePOI: async (_, { id }, { userId }) => {
       await validateUser(userId);
       const poi = await POI.findById(id);
-      if (!poi) return {
-        result: false,
-        message: 'POI not found',
-      };
+      if (!poi) return makeResponse('POI not found');
       await Comment.deleteMany({ poiId: poi._id });
       await Category.updateMany(
         { _id: { $in: poi.catIds } },
         { $inc: { poiCount: -1 } },
       );
       await POI.deleteOne({ _id: id });
-      return {
-        result: true,
-        message: 'POI deleted',
-      };
+      return makeResponse('POI deleted', true);
     },
 
     createComment: async (_, { input }, { userId }) => {
@@ -335,10 +317,7 @@ const poiResolvers = {
         await poi.save();
       }
       await Comment.deleteOne({ _id: id });
-      return {
-        result: true,
-        message: 'Comment deleted',
-      };
+      return makeResponse('Comment deleted', true);
     },
   },
   Category: {

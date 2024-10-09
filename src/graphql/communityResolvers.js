@@ -1,11 +1,12 @@
 import { User, Tag, Question, Answer } from '../models/index.js';
 import aiAnswerQueue from '../jobs/aiAnswer.js';
 import mongoose from 'mongoose';
-import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
+import { validateUser, pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
 import { MODEL_USER } from '../models/common/user.js';
 import { MODEL_TAG } from '../models/community/tag.js';
 import { nonEmptyArray } from '../utils/common.js';
+import { pubsub } from "../utils/pubsub.js";
 
 const { ObjectId } = mongoose.Types;
 
@@ -116,10 +117,7 @@ const communityResolvers = {
     mergeTags: async (_, { sourceTagIds, targetTagId }, { userId }) => {
       await validateUser(userId);
       const targetTag = await Tag.findById(targetTagId);
-      if (!targetTag) return {
-        result: false,
-        message: 'Target tag not found',
-      };
+      if (!targetTag) return makeResponse('Target tag not found');
 
       for (const sourceTagId of sourceTagIds) {
         if (sourceTagId.toString() === targetTagId.toString()) continue;
@@ -157,31 +155,17 @@ const communityResolvers = {
       await Tag.deleteMany({ _id: { $in: sourceTagIds } })
       await targetTag.save();
 
-      return {
-        result: true,
-        message: 'Tags merged successfully',
-        data: targetTag,
-      };
+      return makeResponse('Tags merged successfully', true);
     },
     deleteTag: async (_, { id }, { userId }) => {
       await validateUser(userId);
       const tag = await Tag.findById(id);
-      if (!tag) return {
-        result: false,
-        message: 'Tag not found',
-      };
+      if (!tag) return makeResponse('Tag not found');
       // check if tag has no questions in it, otherwise deletion is prohibited
       const question = await Question.findOne({ tagIds: id })
-      if (question || tag.questionCount > 0) return {
-        result: false,
-        message: 'Tag not empty',
-      };
+      if (question || tag.questionCount > 0) return makeResponse('Tag not empty');
       await Tag.deleteOne({ _id: id })
-      return {
-        result: true,
-        message: 'Tag deleted',
-        data: tag
-      };
+      return makeResponse('Tag deleted', true);
     },
 
     createQuestion: async (_, { title, content, tagIds, imageIds, externalImageUrls }, { userId }) => {
@@ -253,14 +237,14 @@ const communityResolvers = {
     deleteQuestion: async (_, { id }, { userId }) => {
       await validateUser(userId);
 
-      if (!ObjectId.isValid(id)) throw new Error('Invalid question ID');
+      if (!ObjectId.isValid(id)) return makeResponse('Invalid question ID');
 
       const question = await Question.findById(id);
 
-      if (!question) return { result: false, message: 'Question not found' };
+      if (!question) return makeResponse('Question not found');
 
       if (question.authorId.toString() !== userId) {
-        return { result: false, message: 'You are not authorized to delete this question' };
+        return makeResponse('You are not authorized to delete this question');
       }
 
       // delete associated answers
@@ -285,7 +269,7 @@ const communityResolvers = {
 
       await Question.deleteOne({ _id: id });
 
-      return { result: true, message: 'Question deleted' };
+      return makeResponse('Question deleted', true);
     },
 
     createAnswer: async (_, { questionId, content, imageIds, externalImageUrls }, { userId }) => {
@@ -301,8 +285,11 @@ const communityResolvers = {
         imageIds,
         externalImageUrls,
       });
-
-      return await answer.save();
+      const result = await answer.save();
+      await pubsub.publish(`ANSWER_ADDED_${questionId}`, {
+        answerAdded: makeResponse('Answer added', true, answer.id)
+      });
+      return result;
     },
 
     updateAnswer: async (_, { id, content, imageIds, externalImageUrls }, { userId }) => {
@@ -328,23 +315,14 @@ const communityResolvers = {
     deleteAnswer: async (_, { id }, { userId }) => {
       await validateUser(userId);
 
-      if (!ObjectId.isValid(id)) return {
-        result: false,
-        message: 'Invalid answer ID',
-      };
+      if (!ObjectId.isValid(id)) return makeResponse('Invalid answer ID');
 
       const answer = await Answer.findById(id);
 
-      if (!answer) return {
-        result: false,
-        message: 'Answer not found',
-      };
+      if (!answer) return makeResponse('Answer not found');
 
       if (answer.authorId.toString() !== userId) {
-        return {
-          result: false,
-          message: 'You are not authorized to delete this answer',
-        };
+        return makeResponse('You are not authorized to delete this answer');
       }
 
       // delete associated images
@@ -359,11 +337,9 @@ const communityResolvers = {
       }
 
       await Answer.deleteOne({ _id: id });
-      return {
-        result: true,
-        message: 'Answer deleted',
-        data: answer,
-      };
+      const response = makeResponse('Answer deleted', true, id);
+      await pubsub.publish(`ANSWER_DELETED_${answer.questionId}`, { answerDeleted: response });
+      return response;
     },
   },
 

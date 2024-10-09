@@ -30,3 +30,11 @@ export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, p
     currentPage: page,
   };
 };
+
+export const makeResponse = (message = null, result = false, data = null) => {
+  return {
+    result: result,
+    message: message,
+    data: data,
+  }
+};
