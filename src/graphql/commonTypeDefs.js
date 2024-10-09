@@ -3,6 +3,7 @@ import { gql } from 'apollo-server';
 const commonTypeDefs = gql`
   scalar Date
   scalar Upload
+  scalar Object
 
   type User {
     id: ID!
@@ -91,6 +92,7 @@ const commonTypeDefs = gql`
   type Response {
     result: Boolean!
     message: String
+    data: Object
   }
 
   input PageOptions {
@@ -123,6 +125,8 @@ const commonTypeDefs = gql`
     getImage(id: ID!): Image
     getUserImages: [Image!]!
 
+    isVoted(targetId: ID!): Response!
+
     getCharacters: [Character!]
   }
 
@@ -145,8 +149,7 @@ const commonTypeDefs = gql`
     ): VoteResponse
 
     uploadImage(file: Upload!): Image!
-
-    deleteImage(imageId: ID!): Boolean!
+    deleteImage(imageId: ID!): Response!
 
     createCharacter(
       name: String!

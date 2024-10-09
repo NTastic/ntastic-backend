@@ -75,6 +75,16 @@ const commonResolvers = {
         throw new Error('An error occurred while fetching images');
       }
     },
+
+    isVoted: async (_, { targetId }, { userId }) => {
+      await validateUser(userId);
+
+      const vote = await Vote.findOne({ userId, targetId });
+      return {
+        result: vote != null,
+        data: vote,
+      }
+    },
   },
 
   Mutation: {
@@ -322,7 +332,10 @@ const commonResolvers = {
       const user = await validateUser(userId);
 
       try {
-        if (!ObjectId.isValid(imageId)) return false;
+        if (!ObjectId.isValid(imageId)) return {
+          result: false,
+          message: 'Invalid image id'
+        };
         const bucket = getGridFSBucket();
 
         const fileId = new ObjectId(imageId);
@@ -330,14 +343,20 @@ const commonResolvers = {
         // Find the file
         const files = await bucket.find({ _id: fileId }).toArray();
         if (!files || files.length === 0) {
-          throw new Error('File not found');
+          return {
+            result: false,
+            message: 'File not found'
+          };
         }
 
         const file = files[0];
 
         // Check ownership
         if (file.metadata.uploadedBy.toString() !== userId) {
-          throw new Error('You are not authorized to delete this image');
+          return {
+            result: false,
+            message: 'You are not authorized to delete this image'
+          };
         }
 
         // Delete the file from GridFS
@@ -360,7 +379,10 @@ const commonResolvers = {
           { imageIds: fileId },
           { $pull: { imageIds: fileId } }
         );
-        return true;
+        return {
+          result: true,
+          message: 'Image deleted'
+        };
       } catch (err) {
         console.error('Error deleting image:', err);
         throw new Error('Error deleting the image');
