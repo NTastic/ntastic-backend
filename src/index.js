@@ -68,7 +68,7 @@ const startServer = async () => {
   await connectDB();
 
   // handling file uploads
-  app.use(graphqlUploadExpress({ maxFileSize: 10_000_000, maxFiles: 10 }));
+  app.use(graphqlUploadExpress({ maxFileSize: 5 * 1024 * 1024, maxFiles: 10 }));
 
   // Image download endpoint
   app.get('/images/:id', imagesEndpoint);
