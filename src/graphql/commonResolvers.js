@@ -75,6 +75,16 @@ const commonResolvers = {
         throw new Error('An error occurred while fetching images');
       }
     },
+
+    isVoted: async (_, { targetId }, { userId }) => {
+      await validateUser(userId);
+
+      const vote = await Vote.findOne({ userId, targetId });
+      return {
+        result: vote != null,
+        data: vote,
+      }
+    },
   },
 
   Mutation: {

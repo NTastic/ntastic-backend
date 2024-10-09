@@ -125,6 +125,8 @@ const commonTypeDefs = gql`
     getImage(id: ID!): Image
     getUserImages: [Image!]!
 
+    isVoted(targetId: ID!): Response!
+
     getCharacters: [Character!]
   }
 
