@@ -116,7 +116,10 @@ const communityResolvers = {
     mergeTags: async (_, { sourceTagIds, targetTagId }, { userId }) => {
       await validateUser(userId);
       const targetTag = await Tag.findById(targetTagId);
-      if (!targetTag) throw new Error('Target tag not found');
+      if (!targetTag) return {
+        result: false,
+        message: 'Target tag not found',
+      };
 
       for (const sourceTagId of sourceTagIds) {
         if (sourceTagId.toString() === targetTagId.toString()) continue;
@@ -127,22 +130,37 @@ const communityResolvers = {
         // update related questions
         await Question.updateMany(
           { tagIds: sourceTagId },
-          { $addToSet: { tagIds: targetTagId }, $pull: { tagIds: sourceTagId } }
+          [{
+            $set: {
+              tagIds: {
+                $let: {
+                  vars: {
+                    withoutSourceTag: {
+                      $filter: {
+                        input: '$tagIds',
+                        cond: { $ne: ['$$this', sourceTagId] }
+                      }
+                    }
+                  },
+                  in: { $concatArrays: ['$$withoutSourceTag', [targetTagId]] }
+                }
+              }
+            }
+          }]
         );
 
         // update synonyms
         targetTag.synonyms = [...new Set([...targetTag.synonyms, sourceTag.name, ...sourceTag.synonyms])];
-
-        // delete original tag
-        await sourceTag.remove();
       }
 
+      // delete original tags
+      await Tag.deleteMany({ _id: { $in: sourceTagIds } })
       await targetTag.save();
 
       return {
-        success: true,
+        result: true,
         message: 'Tags merged successfully',
-        mergedTag: targetTag,
+        data: targetTag,
       };
     },
 
@@ -290,14 +308,23 @@ const communityResolvers = {
     deleteAnswer: async (_, { id }, { userId }) => {
       await validateUser(userId);
 
-      if (!ObjectId.isValid(id)) throw new Error('Invalid answer ID');
+      if (!ObjectId.isValid(id)) return {
+        result: false,
+        message: 'Invalid answer ID',
+      };
 
       const answer = await Answer.findById(id);
 
-      if (!answer) return false;
+      if (!answer) return {
+        result: false,
+        message: 'Answer not found',
+      };
 
       if (answer.authorId.toString() !== userId) {
-        throw new Error('You are not authorized to delete this answer');
+        return {
+          result: false,
+          message: 'You are not authorized to delete this answer',
+        };
       }
 
       // delete associated images
@@ -312,7 +339,11 @@ const communityResolvers = {
       }
 
       await Answer.deleteOne({ _id: id });
-      return true;
+      return {
+        result: true,
+        message: 'Answer deleted',
+        data: answer,
+      };
     },
   },
 

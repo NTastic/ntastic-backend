@@ -94,7 +94,6 @@ const communityTypeDefs = gql`
       synonyms: [String],
       parentTagId: ID
     ): Tag
-
     updateTag(
       id: ID!,
       name: String,
@@ -102,13 +101,11 @@ const communityTypeDefs = gql`
       synonyms: [String],
       parentTagId: ID
     ): Tag
-
     mergeTags(
       sourceTagIds: [ID!]!,
       targetTagId: ID!
-    ): MergeTagsResponse
-
-    deleteTag(id: ID!): Boolean!
+    ): Response
+    deleteTag(id: ID!): Response!
 
     createQuestion(
       title: String!,
@@ -143,13 +140,7 @@ const communityTypeDefs = gql`
       externalImageUrls: [String!]
     ): Answer
 
-    deleteAnswer(id: ID!): Boolean!
-  }
-
-  type MergeTagsResponse {
-    success: Boolean!
-    message: String
-    mergedTag: Tag
+    deleteAnswer(id: ID!): Response!
   }
 `;
 
