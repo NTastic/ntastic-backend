@@ -21,6 +21,7 @@
   "homepage": "https://github.com/NTastic/ntastic-backend#readme",
   "dependencies": {
     "@graphql-tools/merge": "^9.0.7",
+    "@graphql-tools/schema": "^10.0.6",
     "apollo-server": "^3.13.0",
     "apollo-upload-client": "^18.0.1",
     "bcryptjs": "^2.4.3",
@@ -31,6 +32,7 @@
     "express-rate-limit": "^7.4.0",
     "graphql": "^16.9.0",
     "graphql-scalars": "^1.23.0",
+    "graphql-subscriptions": "^2.0.0",
     "graphql-upload": "^16.0.2",
     "gridfs-stream": "^1.1.1",
     "helmet": "^7.1.0",
@@ -38,7 +40,8 @@
     "mongoose": "^8.6.3",
     "morgan": "^1.10.0",
     "openai": "^4.63.0",
-    "validator": "^13.12.0"
+    "validator": "^13.12.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"

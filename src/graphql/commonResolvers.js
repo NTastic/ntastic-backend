@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
-import { validateUser, pagingQuery } from '../utils/graphqlHelper.js';
+import { validateUser, pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
 import { getBaseUrl } from '../utils/url.js';
 
 const { ObjectId } = mongoose.Types;
@@ -80,10 +80,7 @@ const commonResolvers = {
       await validateUser(userId);
 
       const vote = await Vote.findOne({ userId, targetId });
-      return {
-        result: vote != null,
-        data: vote,
-      }
+      return makeResponse(null, vote != null, vote);
     },
   },
 
@@ -332,10 +329,7 @@ const commonResolvers = {
       const user = await validateUser(userId);
 
       try {
-        if (!ObjectId.isValid(imageId)) return {
-          result: false,
-          message: 'Invalid image id'
-        };
+        if (!ObjectId.isValid(imageId)) return makeResponse('Invalid image id');
         const bucket = getGridFSBucket();
 
         const fileId = new ObjectId(imageId);
@@ -343,20 +337,14 @@ const commonResolvers = {
         // Find the file
         const files = await bucket.find({ _id: fileId }).toArray();
         if (!files || files.length === 0) {
-          return {
-            result: false,
-            message: 'File not found'
-          };
+          return makeResponse('File not found');
         }
 
         const file = files[0];
 
         // Check ownership
         if (file.metadata.uploadedBy.toString() !== userId) {
-          return {
-            result: false,
-            message: 'You are not authorized to delete this image'
-          };
+          return makeResponse('You are not authorized to delete this image');
         }
 
         // Delete the file from GridFS
@@ -379,10 +367,7 @@ const commonResolvers = {
           { imageIds: fileId },
           { $pull: { imageIds: fileId } }
         );
-        return {
-          result: true,
-          message: 'Image deleted'
-        };
+        return makeResponse('Image deleted', true);
       } catch (err) {
         console.error('Error deleting image:', err);
         throw new Error('Error deleting the image');
@@ -418,14 +403,14 @@ const commonResolvers = {
     deleteCharacter: async (_, { id }, { userId }) => {
       await validateUser(userId);
       const char = await Character.findById(id);
-      if (!char) return { result: false, message: 'Character not found' };
+      if (!char) return makeResponse('Character not found');
 
       await User.updateMany(
         { charIds: id },
         { $pull: { charIds: id } },
       );
       await Character.deleteOne({ _id: id });
-      return { result: true, message: 'Character deleted' };
+      return makeResponse('Character deleted', true);
     },
   },
 
