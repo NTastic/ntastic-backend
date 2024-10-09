@@ -2,6 +2,7 @@ import Bull from 'bull';
 import { User, Question, Answer } from '../models/index.js';
 import OpenAI from 'openai';
 import dotenvFlow from 'dotenv-flow';
+import { pubsub } from '../utils/pubsub.js';
 dotenvFlow.config();
 
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
@@ -57,6 +58,9 @@ aiAnswerQueue.process(async (job) => {
 
       await answer.save();
       console.log(`AI answer saved for question ${question._id}.`);
+      await pubsub.publish(`ANSWER_ADDED_${questionId}`, {
+        answerAdded: makeResponse('AI Answer added', true, answer.id)
+      });
     }
   } catch (error) {
     console.error(`Error when generating AI answer for question ${question._id}.`, error);

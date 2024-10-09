@@ -1,6 +1,11 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
+import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
+import http from 'http';
+import { WebSocketServer } from 'ws';
+import { useServer } from 'graphql-ws/lib/use/ws';
+
 import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import helmet from 'helmet';
@@ -9,7 +14,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import dotenvFlow from 'dotenv-flow';
 
-import { typeDefs, resolvers } from './graphql/schema.js';
+import schema from './graphql/schema.js';
 import { connectDB } from './gridfs.js';
 import { imagesEndpoint } from './utils/image.js';
 
@@ -76,10 +81,41 @@ const startServer = async () => {
   // for nginx reverse proxy
   app.set('trust proxy', true);
 
+  // http server
+  const httpServer = http.createServer(app);
+
+  // websocket server
+  const wsServer = new WebSocketServer({
+    server: httpServer,
+    path: '/graphql', // Same path as GraphQL endpoint
+  });
+
+  const serverCleanup = useServer({
+    schema: schema,
+    context: async (ctx, msg, args) => {
+      // This context function will be called for each subscription operation
+      // Here to handle authentication for subscriptions
+      const { connectionParams, extra } = ctx;
+      let userId = null;
+
+      if (connectionParams && connectionParams.authorization) {
+        const token = connectionParams.authorization;
+        if (token) {
+          try {
+            const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
+            userId = decoded.userId;
+          } catch (err) {
+            console.warn('Invalid token in connectionParams');
+          }
+        }
+        return { userId, SECRET_KEY };
+      }
+    },
+  }, wsServer);
+
   // Apollo Server config
   const server = new ApolloServer({
-    typeDefs,
-    resolvers,
+    schema: schema,
     // playground: ENABLE_INTROSPECTION,
     introspection: ENABLE_INTROSPECTION,
     context: ({ req }) => {
@@ -98,13 +134,27 @@ const startServer = async () => {
 
       return { req, userId, SECRET_KEY };
     },
+    plugins: [
+      // Proper shutdown for the HTTP server.
+      ApolloServerPluginDrainHttpServer({ httpServer }),
+      // Proper shutdown for the WebSocket server.
+      {
+        async serverWillStart() {
+          return {
+            async drainServer() {
+              await serverCleanup.dispose();
+            }
+          }
+        }
+      },
+    ],
   });
 
   // start server
   await server.start();
   server.applyMiddleware({ app });
 
-  app.listen({ port: PORT }, () =>
+  httpServer.listen({ port: PORT }, () =>
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)
   );
 };
