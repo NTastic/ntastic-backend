@@ -163,6 +163,26 @@ const communityResolvers = {
         data: targetTag,
       };
     },
+    deleteTag: async (_, { id }, { userId }) => {
+      await validateUser(userId);
+      const tag = await Tag.findById(id);
+      if (!tag) return {
+        result: false,
+        message: 'Tag not found',
+      };
+      // check if tag has no questions in it, otherwise deletion is prohibited
+      const question = await Question.findOne({ tagIds: id })
+      if (question || tag.questionCount > 0) return {
+        result: false,
+        message: 'Tag not empty',
+      };
+      await Tag.deleteOne({ _id: id })
+      return {
+        result: true,
+        message: 'Tag deleted',
+        data: tag
+      };
+    },
 
     createQuestion: async (_, { title, content, tagIds, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
