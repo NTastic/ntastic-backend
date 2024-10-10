@@ -1,6 +1,6 @@
 import express from 'express';
 import { ApolloServer } from 'apollo-server-express';
-import { ApolloServerPluginDrainHttpServer } from 'apollo-server-core';
+import { ApolloServerPluginDrainHttpServer, AuthenticationError } from 'apollo-server-core';
 import graphqlUploadExpress from 'graphql-upload/graphqlUploadExpress.mjs';
 import http from 'http';
 import { WebSocketServer } from 'ws';
@@ -26,6 +26,7 @@ dotenvFlow.config();
 
 const {
   SECRET_KEY,
+  REFRESH_SECRET_KEY,
   MONGODB_URI,
   PORT = 4000,
   ENABLE_INTROSPECTION = false,
@@ -33,8 +34,8 @@ const {
   IS_PRODUCTION = process.env.NODE_ENV === 'production',
 } = process.env;
 
-if (!SECRET_KEY) {
-  throw new Error('SECRET_KEY is not defined in environment variables');
+if (!SECRET_KEY || !REFRESH_SECRET_KEY) {
+  throw new Error('SECRET_KEY or REFRESH_SECRET_KEY is not defined in environment variables');
 }
 
 if (!MONGODB_URI) {
@@ -55,16 +56,17 @@ const startServer = async () => {
     app.use(morgan('combined'))
     // Security middlewares
     app.use(helmet())
-
-    const limiter = rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      max: 2000, // limit each IP to 100 requests per windowMs
-      message: 'Too many requests from this IP, please try again after 15 minutes',
-    });
-    app.use(limiter);
   } else {
     app.use(morgan('dev'));
   }
+
+  // request limitation
+  // const limiter = rateLimit({
+  //   windowMs: 10 * 60 * 1000, // 10 minutes
+  //   max: 2000, // limit each IP to 2000 requests per windowMs
+  //   message: 'Too many requests from this IP, please try again after 10 minutes',
+  // });
+  // app.use(limiter);
 
   // prevent large file request attack
   app.use(express.json({ limit: '10kb' }));
@@ -105,10 +107,14 @@ const startServer = async () => {
             const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
             userId = decoded.userId;
           } catch (err) {
-            console.warn('Invalid token in connectionParams');
+            if (err.name === 'TokenExpiredError') {
+              console.warn('Access token expired in connectionParams');
+            } else {
+              console.warn('Invalid access token in connectionParams');
+            }
           }
         }
-        return { userId, SECRET_KEY };
+        return { userId, SECRET_KEY, REFRESH_SECRET_KEY };
       }
     },
   }, wsServer);
@@ -128,11 +134,16 @@ const startServer = async () => {
           const decoded = jwt.verify(token.replace('Bearer ', ''), SECRET_KEY);
           userId = decoded.userId;
         } catch (err) {
-          console.warn('Invalid token');
+          if (err.name === 'TokenExpiredError') {
+            console.warn('Access token expired');
+            throw new AuthenticationError('Access token expired');
+          } else {
+            console.warn('Invalid access token');
+          }
         }
       }
 
-      return { req, userId, SECRET_KEY };
+      return { req, userId, SECRET_KEY, REFRESH_SECRET_KEY };
     },
     plugins: [
       // Proper shutdown for the HTTP server.
@@ -152,7 +163,11 @@ const startServer = async () => {
 
   // start server
   await server.start();
-  server.applyMiddleware({ app });
+  server.applyMiddleware({
+    app,
+    path: '/graphql',
+    cors: false,
+  });
 
   httpServer.listen({ port: PORT }, () =>
     console.log(`🚀 Server ready at http://localhost:${PORT}${server.graphqlPath}`)

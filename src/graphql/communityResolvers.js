@@ -1,12 +1,13 @@
 import { User, Tag, Question, Answer } from '../models/index.js';
 import aiAnswerQueue from '../jobs/aiAnswer.js';
 import mongoose from 'mongoose';
-import { validateUser, pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
+import { pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
 import { MODEL_USER } from '../models/common/user.js';
 import { MODEL_TAG } from '../models/community/tag.js';
 import { nonEmptyArray } from '../utils/common.js';
 import { pubsub } from "../utils/pubsub.js";
+import { validateUser } from '../utils/user.js';
 
 const { ObjectId } = mongoose.Types;
 

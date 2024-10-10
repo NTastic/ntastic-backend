@@ -1,13 +1,3 @@
-import { User } from '../models/index.js';
-
-export const validateUser = async (userId) => {
-  if (!userId) throw new Error('Authentication required');
-
-  const user = await User.findById(userId);
-  if (!user) throw new Error('User not found');
-  return user;
-};
-
 export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, populate = []) => {
   const { page = 1, limit = 10, sortField = 'createdAt', order = 'ASC' } = pageOptions;
   const sortOrder = order === 'ASC' ? 1 : -1;

@@ -1,7 +1,8 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
-const User = require('./src/models/User');
-require('dotenv-flow').config();
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import { User } from './src/models/index.js';
+import DotenvFlow from 'dotenv-flow';
+DotenvFlow.config();
 
 const BOT_NAME = process.env.AI_BOT_USERNAME || 'NTasticBot';
 const BOT_EMAIL = process.env.AI_BOT_EMAIL || 'ai@ntastic.site'

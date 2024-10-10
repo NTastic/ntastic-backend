@@ -1,7 +1,9 @@
 import mongoose from 'mongoose';
 import { Category, Recommendation, POI, Comment } from '../models/index.js';
-import { makeResponse, pagingQuery, validateUser } from '../utils/graphqlHelper.js';
+import { makeResponse, pagingQuery } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
+import { validateUser } from '../utils/user.js';
+
 const { ObjectId } = mongoose.Types;
 
 const poiResolvers = {
