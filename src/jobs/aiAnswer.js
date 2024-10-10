@@ -3,6 +3,7 @@ import { User, Question, Answer } from '../models/index.js';
 import OpenAI from 'openai';
 import dotenvFlow from 'dotenv-flow';
 import { pubsub } from '../utils/pubsub.js';
+import { makeResponse } from '../utils/graphqlHelper.js';
 dotenvFlow.config();
 
 const REDIS_HOST = process.env.REDIS_HOST || '127.0.0.1';
