@@ -1,10 +1,11 @@
+import { AuthenticationError } from 'apollo-server';
 import { User } from '../models/index.js';
 
 export const validateUser = async (userId) => {
-  if (!userId) throw new Error('Authentication required');
+  if (!userId) throw new AuthenticationError('Authentication required');
 
   const user = await User.findById(userId);
-  if (!user) throw new Error('User not found');
+  if (!user) throw new AuthenticationError('User not found');
   return user;
 };
 
@@ -16,7 +17,7 @@ export const addRefreshToken = async (
 ) => {
   const expiresAt = new Date(Date.now() + expiresDays * 24 * 60 * 60 * 1000);
   // Add the new refresh token to the beginning of the array
-  
+
   user.refreshTokens.unshift({
     token: refreshToken,
     expiresAt,
