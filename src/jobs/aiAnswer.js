@@ -48,7 +48,7 @@ aiAnswerQueue.process(async (job) => {
       messages: messages,
     });
 
-    for (const choice in completion.choices) {
+    for (const choice of completion.choices) {
       const aiAnswerContent = choice.message.content.trim();
       if (aiAnswerContent) {
         const answer = new Answer({
