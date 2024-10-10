@@ -48,20 +48,21 @@ aiAnswerQueue.process(async (job) => {
       messages: messages,
     });
 
-    const aiAnswerContent = completion.choices[0].message.content.trim();
+    for (const choice in completion.choices) {
+      const aiAnswerContent = choice.message.content.trim();
+      if (aiAnswerContent) {
+        const answer = new Answer({
+          questionId: question._id,
+          content: aiAnswerContent,
+          authorId: aiBotUser._id,
+        });
 
-    if (aiAnswerContent) {
-      const answer = new Answer({
-        questionId: question._id,
-        content: aiAnswerContent,
-        authorId: aiBotUser._id,
-      });
-
-      await answer.save();
-      console.log(`AI answer saved for question ${question._id}.`);
-      await pubsub.publish(`ANSWER_ADDED_${questionId}`, {
-        answerAdded: makeResponse('AI Answer added', true, answer.id)
-      });
+        await answer.save();
+        console.log(`AI answer saved for question ${question._id}.`);
+        await pubsub.publish(`ANSWER_ADDED_${questionId}`, {
+          answerAdded: makeResponse('AI Answer added', true, answer.id)
+        });
+      }
     }
   } catch (error) {
     console.error(`Error when generating AI answer for question ${question._id}.`, error);
