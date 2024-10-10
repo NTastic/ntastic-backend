@@ -76,7 +76,8 @@ const commonTypeDefs = gql`
   }
 
   type AuthPayload {
-    token: String!
+    accessToken: String!
+    refreshToken: String!
     user: User!
   }
 
@@ -137,8 +138,18 @@ const commonTypeDefs = gql`
       password: String!
       phone: String
       isBot: Boolean = false
+      deviceInfo: String = null
     ): AuthPayload
-    login(email: String!, password: String!): AuthPayload
+    login(
+      email: String!
+      password: String!
+      deviceInfo: String = null
+    ): AuthPayload
+    refreshToken(
+      refreshToken: String!
+      deviceInfo: String = null
+    ): AuthPayload!
+    logout(refreshToken: String!): Response
 
     updateUser(input: UserInput): User
 

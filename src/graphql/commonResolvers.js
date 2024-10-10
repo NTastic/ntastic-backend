@@ -6,8 +6,10 @@ import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
 import { validateFile, checkStorageLimit, updateUserStorage } from '../utils/storage.js';
-import { validateUser, pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
+import { pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
 import { getBaseUrl } from '../utils/url.js';
+import { addRefreshToken, validateUser } from '../utils/user.js';
+import { AuthenticationError } from 'apollo-server';
 
 const { ObjectId } = mongoose.Types;
 
@@ -86,7 +88,16 @@ const commonResolvers = {
 
   Mutation: {
     // register user
-    register: async (_, { username, email, password, phone, isBot = false }, { SECRET_KEY }) => {
+    register: async (_, {
+      username,
+      email,
+      password,
+      phone,
+      isBot = false,
+      deviceInfo,
+    },
+      { SECRET_KEY, REFRESH_SECRET_KEY },
+    ) => {
       const existingUser = await User.findOne({ email });
       if (existingUser) throw new Error('Email already registered');
 
@@ -100,16 +111,28 @@ const commonResolvers = {
       });
       // save to database
       const res = await user.save();
-      // Optionally, generate a JWT token here
-      const token = jwt.sign({ userId: res.id }, SECRET_KEY, { expiresIn: '7d' });
+      // generate token here
+      const accessToken = jwt.sign(
+        { userId: res.id },
+        SECRET_KEY,
+        { expiresIn: '15min' },
+      );
+      const refreshToken = jwt.sign(
+        { userId: res.id },
+        REFRESH_SECRET_KEY,
+        { expiresIn: '7d' }
+      );
+
+      await addRefreshToken(user, refreshToken, deviceInfo);
       return {
-        token,
+        accessToken,
+        refreshToken,
         user: res,
       };
     },
-
     // user login
-    login: async (_, { email, password }, { SECRET_KEY }) => {
+    login: async (_, { email, password, deviceInfo, },
+      { SECRET_KEY, REFRESH_SECRET_KEY }) => {
       const user = await User.findOne({ email }).select('+password');
       if (!user) throw new Error('User not found');
       if (user.isBot) {
@@ -118,11 +141,78 @@ const commonResolvers = {
       }
       const valid = await bcrypt.compare(password, user.password);
       if (!valid) throw new Error('Incorrect password');
-      const token = jwt.sign({ userId: user.id }, SECRET_KEY, { expiresIn: '7d' });
+
+      // generate tokens
+      const accessToken = jwt.sign(
+        { userId: user.id },
+        SECRET_KEY,
+        { expiresIn: '15min' },
+      );
+      const refreshToken = jwt.sign(
+        { userId: user.id },
+        REFRESH_SECRET_KEY,
+        { expiresIn: '7d' }
+      );
+
+      await addRefreshToken(user, refreshToken, deviceInfo);
       return {
-        token,
+        accessToken,
+        refreshToken,
         user,
       };
+    },
+    refreshToken: async (_, { refreshToken, deviceInfo },
+      { SECRET_KEY, REFRESH_SECRET_KEY }) => {
+      let user;
+      try {
+        const decoded = jwt.verify(refreshToken, REFRESH_SECRET_KEY);
+        user = await User.findById(decoded.userId);
+        if (!user) throw new Error();
+      } catch (err) {
+        console.log(err);
+        throw new AuthenticationError('Invalid refresh token');
+      }
+
+      const tokenIndex = user.refreshTokens.findIndex(rt => rt.token === refreshToken);
+      if (tokenIndex === -1) throw new AuthenticationError('Invalid refresh token');
+      const token = user.refreshTokens[tokenIndex];
+      if (token.expiresAt < new Date()) {
+        throw new AuthenticationError('Refresh token expired');
+      }
+
+      // generate tokens
+      const newAccessToken = jwt.sign(
+        { userId: user.id },
+        SECRET_KEY,
+        { expiresIn: '15min' },
+      );
+      // const newRefreshToken = jwt.sign(
+      //   { userId: user.id },
+      //   REFRESH_SECRET_KEY,
+      //   { expiresIn: '7d' }
+      // );
+      // await addRefreshToken(user, newRefreshToken, deviceInfo);
+      return {
+        accessToken: newAccessToken,
+        refreshToken: refreshToken,
+        user,
+      };
+    },
+    logout: async (_, { refreshToken }, { REFRESH_SECRET_KEY }) => {
+      let user;
+      try {
+        const decoded = jwt.verify(refreshToken, REFRESH_SECRET_KEY);
+        user = await User.findById(decoded.userId);
+        if (!user) throw new Error();
+      } catch {
+        return makeResponse('Invalid refresh token');
+      }
+      // Remove the refresh token from the database
+      user.refreshTokens = user.refreshTokens.filter(
+        (rt) => rt.token !== refreshToken
+      );
+      await user.save();
+      return makeResponse("Logged out", true);
     },
 
     updateUser: async (_, { input }, { userId }) => {
