@@ -20,6 +20,7 @@ const poiTypeDefs = gql`
     content: String!
     rating: Float!
     imageUrls: [String!]
+    votes: VoteCount!
     createdAt: Date!
     updatedAt: Date
   }
@@ -37,6 +38,7 @@ const poiTypeDefs = gql`
     workingHours: [WorkingHour]
     website: String
     comments: Pagination!
+    votes: VoteCount!
     createdAt: Date!
     updatedAt: Date
   }
@@ -51,6 +53,7 @@ const poiTypeDefs = gql`
     description: String
     catIds: [ID!]
     list: [RecommendPOI!]
+    votes: VoteCount!
   }
 
   type Location {
