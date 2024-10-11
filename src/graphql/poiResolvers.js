@@ -214,7 +214,7 @@ const poiResolvers = {
       if (locationInput) {
         location = {
           type: 'Point',
-          coordinates: [locationInput.latitude, locationInput.longitude],
+          coordinates: [locationInput.longitude, locationInput.latitude,],
         };
       }
       const poi = await new POI({
@@ -246,7 +246,7 @@ const poiResolvers = {
       if (address) poi.address = address;
       if (locationInput) {
         poi.location = {
-          coordinates: [locationInput.latitude, locationInput.longitude],
+          coordinates: [locationInput.longitude, locationInput.latitude,],
         };
       }
       if (photoUrls) poi.photoUrls = photoUrls;
@@ -337,6 +337,13 @@ const poiResolvers = {
           };
         })
       );
+    },
+  },
+  POI: {
+    location: (poi) => {
+      return {
+        longitude: poi.location.coordinates[0], latitude: poi.location.coordinates[1]
+      }
     },
   },
   Comment: {
