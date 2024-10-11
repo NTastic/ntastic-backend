@@ -16,6 +16,10 @@ const RecommendationSchema = new mongoose.Schema({
     poiId: { type: mongoose.Schema.Types.ObjectId, ref: MODEL_POI },
     commentId: { type: mongoose.Schema.Types.ObjectId, ref: MODEL_COMMENT },
   }],
+  votes: {
+    upvotes: { type: Number, default: 0 },
+    downvotes: { type: Number, default: 0 },
+  },
 }, { timestamps: true });
 
 const Recommendation = mongoose.model(MODEL_RECOMMENDATION, RecommendationSchema)

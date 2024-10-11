@@ -1,7 +1,17 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import GraphQLUpload from 'graphql-upload/GraphQLUpload.mjs';
-import { User, Vote, Character, Question, Answer, POI, Comment, Category } from '../models/index.js';
+import {
+  User,
+  Vote,
+  Character,
+  Question,
+  Answer,
+  POI,
+  Comment,
+  Category,
+  Recommendation,
+} from '../models/index.js';
 import mongoose from 'mongoose';
 import { getGridFSBucket } from '../gridfs.js';
 import { DateTimeResolver } from 'graphql-scalars';
@@ -248,6 +258,9 @@ const commonResolvers = {
           break;
         case 'Comment':
           Model = Comment;
+          break
+        case 'Recommendation':
+          Model = Recommendation;
           break
         default:
           throw new Error('Invalid target type');

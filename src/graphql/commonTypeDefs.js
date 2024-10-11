@@ -47,6 +47,7 @@ const commonTypeDefs = gql`
   enum TargetType {
     Question
     Answer
+    Recommendation
     POI
     Comment
   }
@@ -61,7 +62,7 @@ const commonTypeDefs = gql`
     id: ID!
     user: User!
     targetId: ID!
-    targetType: TargetType!,
+    targetType: TargetType!
     voteType: VoteType!
     createdAt: Date!
   }
