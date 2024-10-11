@@ -31,13 +31,13 @@ const poiTypeDefs = gql`
     phone: String
     address: String
     location: Location
-    catIds: [ID!]!
+    catIds: [ID!]
     rating: Float!
     reviewsCount: Int!
     photoUrls: [String!]
     workingHours: [WorkingHour]
     website: String
-    comments: Pagination!
+    comments: Pagination
     votes: VoteCount!
     createdAt: Date!
     updatedAt: Date
