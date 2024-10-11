@@ -57,8 +57,8 @@ const poiTypeDefs = gql`
   }
 
   type Location {
-    type: String!
-    coordinates: [Float!]
+    latitude: Float!
+    longitude: Float!
   }
 
   type WorkingHour {
