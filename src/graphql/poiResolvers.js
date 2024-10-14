@@ -8,10 +8,12 @@ const { ObjectId } = mongoose.Types;
 
 const poiResolvers = {
   Query: {
-    getCategories: async (_, { catIds }) => {
-      const filterOptions = {};
-      if (nonEmptyArray(catIds)) {
-        filterOptions._id = { $in: catIds };
+    getCategories: async (_, { parentCatId }) => {
+      let filterOptions;
+      if (!parentCatId) {
+        filterOptions = { parentCatId: null };
+      } else {
+        filterOptions = { parentCatId: parentCatId };
       }
       return await Category.find(filterOptions);
     },
