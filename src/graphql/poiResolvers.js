@@ -206,7 +206,7 @@ const poiResolvers = {
 
     createPOI: async (_, { input }, { userId }) => {
       await validateUser(userId);
-      const { name, phone, address, locationInput, catIds, photoUrls, workingHours, website } = input;
+      const { name, phone, address, locationInput, catIds, photoUrls, reviewSummary, workingHours, website } = input;
       if (!nonEmptyArray(catIds)) throw new Error('Invalid catIds');
       const cats = await Category.find({ _id: { $in: catIds } });
       if (cats.length < 1) throw new Error('Invalid catIds');
@@ -224,6 +224,7 @@ const poiResolvers = {
         location,
         catIds,
         photoUrls,
+        reviewSummary,
         workingHours,
         website,
       }).save();
@@ -238,7 +239,7 @@ const poiResolvers = {
       await validateUser(userId);
       const poi = await POI.findById(id);
       if (!poi) throw new Error('POI not found');
-      const { name, phone, address, locationInput, catIds, photoUrls, workingHours, website } = input;
+      const { name, phone, address, locationInput, catIds, photoUrls, reviewSummary, workingHours, website } = input;
       const cats = await Category.find({ _id: { $in: catIds } });
       if (cats.length < 1) throw new Error('Invalid catIds');
       if (name.trim()) poi.name = name.trim();
@@ -250,6 +251,7 @@ const poiResolvers = {
         };
       }
       if (photoUrls) poi.photoUrls = photoUrls;
+      if (reviewSummary) poi.reviewSummary = reviewSummary;
       if (workingHours) poi.workingHours = workingHours;
       if (website) poi.website = website;
       return await poi.save();

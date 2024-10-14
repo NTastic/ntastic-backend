@@ -34,10 +34,10 @@ const poiTypeDefs = gql`
     catIds: [ID!]
     rating: Float!
     reviewsCount: Int!
+    reviewSummary: String
     photoUrls: [String!]
     workingHours: [WorkingHour]
     website: String
-    comments: Pagination
     votes: VoteCount!
     createdAt: Date!
     updatedAt: Date
@@ -96,6 +96,7 @@ const poiTypeDefs = gql`
     locationInput: LocationInput
     catIds: [ID!]
     photoUrls: [String!]
+    reviewSummary: String
     workingHours: [WorkingHourInput]
     website: String
   }

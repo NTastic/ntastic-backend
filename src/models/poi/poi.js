@@ -17,6 +17,7 @@ const PoiSchema = new mongoose.Schema({
   }],
   rating: { type: Number, min: 0, max: 5, default: 0 },
   reviewsCount: { type: Number, default: 0 },
+  reviewSummary: { type: String },
   photoUrls: [{ type: String }],
   workingHours: [{ day: String, time: String }],
   website: { type: String },
