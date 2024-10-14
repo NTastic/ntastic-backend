@@ -62,9 +62,8 @@ const poiTypeDefs = gql`
   }
 
   type WorkingHour {
-    day: String!
-    open: String
-    close: String
+    day: String
+    time: String
   }
 
   input CategoryInput {
@@ -81,8 +80,7 @@ const poiTypeDefs = gql`
 
   input WorkingHourInput {
     day: String
-    open: String
-    close: String
+    time: String
   }
 
   input RecommendationInput {
