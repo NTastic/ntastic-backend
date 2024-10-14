@@ -109,7 +109,7 @@ const poiTypeDefs = gql`
   }
 
   type Query {
-    getCategories(catIds: [ID!] = null): [Category!]
+    getCategories(parentCatId: ID = null): [Category!]
     getRecommendations(
       catIds: [ID!]
       catMatch: MatchType = ANY
