@@ -121,7 +121,7 @@ const poiTypeDefs = gql`
       catMatch: MatchType = ANY
       pageOptions: PageOptions
     ): Pagination!
-    getPOI(id: ID!): Response
+    getPOI(id: ID!): POI
     getComments(
       poiId: ID!
       pageOptions: PageOptions
