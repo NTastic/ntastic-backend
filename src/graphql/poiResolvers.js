@@ -31,10 +31,10 @@ const poiResolvers = {
     },
 
     getPOI: async (_, { id }) => {
-      if (!ObjectId.isValid(id)) return makeResponse('Invalid ID');
+      if (!ObjectId.isValid(id)) throw new Error('Invalid ID');
       const poi = await POI.findById(id);
-      if (!poi) return makeResponse('POI not found');
-      return makeResponse(null, true, poi);
+      if (!poi) throw new Error('POI not found');
+      return poi;
     },
 
     getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
