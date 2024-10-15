@@ -30,6 +30,13 @@ const poiResolvers = {
       return await pagingQuery(Recommendation, pageOptions, filterOptions);
     },
 
+    getPOI: async (_, { id }) => {
+      if (!ObjectId.isValid(id)) return makeResponse('Invalid ID');
+      const poi = await POI.findById(id);
+      if (!poi) return makeResponse('POI not found');
+      return makeResponse(null, true, poi);
+    },
+
     getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
       let filterOptions = {};
       if (nonEmptyArray(catIds)) {
