@@ -116,6 +116,7 @@ const poiTypeDefs = gql`
       catMatch: MatchType = ANY
       pageOptions: PageOptions
     ): Pagination!
+    getRecommendation(id: ID!): Recommendation
 
     getPOIs(
       catIds: [ID!]

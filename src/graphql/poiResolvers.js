@@ -18,6 +18,12 @@ const poiResolvers = {
       return await Category.find(filterOptions);
     },
 
+    getRecommendation: async (_, { id }) => {
+      if (!ObjectId.isValid(id)) throw new Error('Invalid ID');
+      const recommendation = await Recommendation.findById(id);
+      if (!recommendation) throw new Error('Recommendation not found');
+      return recommendation;
+    },
     getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
       let filterOptions = {};
       if (nonEmptyArray(catIds)) {
