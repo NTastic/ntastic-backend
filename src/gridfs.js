@@ -1,17 +1,15 @@
 import mongoose from 'mongoose';
 import Grid from 'gridfs-stream';
-import dotenvFlow from 'dotenv-flow';
-dotenvFlow.config();
 
 let gfs;
 let gridfsBucket;
 
 export const IMAGES = 'images';
 export const IMAGES_FILES = IMAGES + ".files";
-const connectDB = async () => {
+const connectDB = async (uri) => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
-    console.log('MongoDB connected');
+    const conn = await mongoose.connect(uri);
+    console.log('MongoDB connected:', uri);
 
     const db = mongoose.connection.db;
     gridfsBucket = new mongoose.mongo.GridFSBucket(db, {

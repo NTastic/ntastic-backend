@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Category, Recommendation, POI, Comment } from '../models/index.js';
+import { Category, Recommendation, POI, Comment, User, MODEL_POI } from '../models/index.js';
 import { makeResponse, pagingQuery } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
 import { validateUser } from '../utils/user.js';
@@ -356,9 +356,6 @@ const poiResolvers = {
         longitude: poi.location.coordinates[0], latitude: poi.location.coordinates[1]
       }
     },
-  },
-  Comment: {
-    poi: async (comment) => await POI.findById(comment.poiId),
   },
 };
 

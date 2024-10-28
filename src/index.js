@@ -72,7 +72,7 @@ const startServer = async () => {
   app.use(express.json({ limit: '10kb' }));
 
   // connect to MongoDB
-  await connectDB();
+  await connectDB(MONGODB_URI);
 
   // handling file uploads
   app.use(graphqlUploadExpress({ maxFileSize: 5 * 1024 * 1024, maxFiles: 10 }));
