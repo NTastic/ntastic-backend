@@ -15,8 +15,8 @@ const poiTypeDefs = gql`
 
   type Comment {
     id: ID!
-    poi: POI!
-    author: User!
+    poiId: ID!
+    authorId: ID!
     content: String!
     rating: Float!
     imageUrls: [String!]
@@ -52,6 +52,7 @@ const poiTypeDefs = gql`
     title: String!
     description: String
     catIds: [ID!]
+    photoUrls: [String!]
     list: [RecommendPOI!]
     votes: VoteCount!
   }
@@ -113,7 +114,7 @@ const poiTypeDefs = gql`
     getRecommendations(
       catIds: [ID!]
       catMatch: MatchType = ANY
-      pageOptions:PageOptions
+      pageOptions: PageOptions
     ): Pagination!
 
     getPOIs(
