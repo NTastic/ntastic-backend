@@ -16,7 +16,7 @@ const poiTypeDefs = gql`
   type Comment {
     id: ID!
     poiId: ID!
-    authorId: ID!
+    author: User!
     content: String!
     rating: Float!
     imageUrls: [String!]

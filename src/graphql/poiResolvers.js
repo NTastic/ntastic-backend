@@ -356,6 +356,11 @@ const poiResolvers = {
       );
     },
   },
+  Comment: {
+    author: async (comment) => {
+      return await User.findById(comment.authorId);
+    },
+  },
   POI: {
     location: (poi) => {
       return {
