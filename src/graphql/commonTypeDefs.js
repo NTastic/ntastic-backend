@@ -9,6 +9,7 @@ const commonTypeDefs = gql`
     id: ID!
     username: String!
     email: String!
+    description: String
     avatar: String
     avatarId: ID
     isBot: Boolean!
@@ -107,6 +108,7 @@ const commonTypeDefs = gql`
   input UserInput {
     username: String
     avatarId: ID
+    description: String
     phone: String
     charIds: [ID!]
     faveCatIds: [ID!]
