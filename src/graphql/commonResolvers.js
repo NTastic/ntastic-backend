@@ -228,9 +228,10 @@ const commonResolvers = {
     updateUser: async (_, { input }, { userId }) => {
       const user = await validateUser(userId);
 
-      const { username, avatarId, phone, charIds, faveCatIds, faveSubCatIds } = input;
+      const { username, avatarId, description, phone, charIds, faveCatIds, faveSubCatIds } = input;
       user.username = username || user.username;
       user.avatarId = avatarId || user.avatarId;
+      user.description = description || user.description;
       user.phone = phone || user.phone;
       user.updatedAt = new Date();
       user.charIds = charIds || user.charIds;
