@@ -78,7 +78,7 @@ const poiTypeDefs = gql`
 
   input LocationFilter {
     near: LocationInput
-    maxDistance: Int = 10000000
+    maxDistance: Int = 100000
   }
 
   input WorkingHourInput {
