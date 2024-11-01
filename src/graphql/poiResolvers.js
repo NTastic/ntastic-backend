@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Category, Recommendation, POI, Comment, User } from '../models/index.js';
-import { makeResponse, pagingQuery } from '../utils/graphqlHelper.js';
+import { makeResponse, mapIds, pagingQuery } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
 import { validateUser } from '../utils/user.js';
 
@@ -24,9 +24,29 @@ const poiResolvers = {
       if (!recommendation) throw new Error('Recommendation not found');
       return recommendation;
     },
-    getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
+    getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions,
+      location = { near: { latitude: -12.4608987, longitude: 130.8360045 }, maxDistance: 100_000 } }) => {
       let filterOptions = {};
+
+      // Build the $geoNear stage
+      const geoNearStage = {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [location.near.longitude, location.near.latitude],
+          },
+          distanceField: 'distance', // Name of the field to store calculated distance
+          spherical: true,
+          key: 'poi.location',
+          // Only include documents within the specified maxDistance
+          ...(location.maxDistance > 0 && { maxDistance: location.maxDistance }),
+        },
+      };
+      // Add the $geoNear stage to filterOptions
+      filterOptions.$geoNear = geoNearStage;
+
       if (nonEmptyArray(catIds)) {
+        catIds = mapIds(catIds);
         if (catMatch === 'ALL') {
           filterOptions.catIds = { $all: catIds };
         } else {
@@ -43,9 +63,25 @@ const poiResolvers = {
       return poi;
     },
 
-    getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
+    getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions,
+      location = { near: { latitude: -12.4608987, longitude: 130.8360045 }, maxDistance: 100_000 } }) => {
       let filterOptions = {};
+      const geoNearStage = {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [location.near.longitude, location.near.latitude],
+          },
+          distanceField: 'distance',
+          spherical: true,
+          key: 'location',
+          ...(location.maxDistance > 0 && { maxDistance: location.maxDistance }),
+        },
+      };
+      filterOptions.$geoNear = geoNearStage;
+
       if (nonEmptyArray(catIds)) {
+        catIds = mapIds(catIds);
         if (catMatch === 'ALL') {
           filterOptions.catIds = { $all: catIds };
         } else {
@@ -57,7 +93,7 @@ const poiResolvers = {
 
     getComments: async (_, { poiId, pageOptions }) => {
       if (!poiId) throw new Error("poiId must be present");
-      const filterOptions = { poiId: poiId };
+      const filterOptions = { poiId: mapIds(poiId) };
       return await pagingQuery(Comment, pageOptions, filterOptions);
     },
   },

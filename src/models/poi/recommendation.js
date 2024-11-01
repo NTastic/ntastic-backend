@@ -11,6 +11,10 @@ const RecommendationSchema = new mongoose.Schema({
     ref: MODEL_CATEGORY,
     required: true,
   }],
+  // location: {
+  //   type: { type: String, enum: ['Point'], default: 'Point' },
+  //   coordinates: { type: [Number] },
+  // },
   poi: { type: PoiSchema, required: true },
   comment: { type: CommentSchema, required: true },
   votes: {
@@ -19,5 +23,6 @@ const RecommendationSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// RecommendationSchema.index({ location: '2dsphere' });
 const Recommendation = mongoose.model(MODEL_RECOMMENDATION, RecommendationSchema);
 export default Recommendation;

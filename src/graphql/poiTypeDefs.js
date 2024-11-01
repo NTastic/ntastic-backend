@@ -76,6 +76,11 @@ const poiTypeDefs = gql`
     longitude: Float!
   }
 
+  input LocationFilter {
+    near: LocationInput
+    maxDistance: Int = 10000000
+  }
+
   input WorkingHourInput {
     day: String
     time: String
@@ -112,6 +117,7 @@ const poiTypeDefs = gql`
       catIds: [ID!]
       catMatch: MatchType = ANY
       pageOptions: PageOptions
+      location: LocationFilter
     ): Pagination!
     getRecommendation(id: ID!): Recommendation
 
@@ -119,6 +125,7 @@ const poiTypeDefs = gql`
       catIds: [ID!]
       catMatch: MatchType = ANY
       pageOptions: PageOptions
+      location: LocationFilter
     ): Pagination!
     getPOI(id: ID!): POI
     getComments(

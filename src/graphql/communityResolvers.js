@@ -1,7 +1,7 @@
 import { User, Tag, Question, Answer } from '../models/index.js';
 import aiAnswerQueue from '../jobs/aiAnswer.js';
 import mongoose from 'mongoose';
-import { pagingQuery, makeResponse } from '../utils/graphqlHelper.js';
+import { pagingQuery, makeResponse, mapIds } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
 import { MODEL_USER } from '../models/common/user.js';
 import { MODEL_TAG } from '../models/community/tag.js';
@@ -44,7 +44,7 @@ const communityResolvers = {
       // Build filter options
       let filterOptions = {};
       if (nonEmptyArray(tagIds)) {
-        const tagObjectIds = tagIds;
+        const tagObjectIds = mapIds(tagIds);
         if (tagMatch === 'ALL') {
           filterOptions.tagIds = { $all: tagObjectIds };
         } else {
@@ -67,8 +67,8 @@ const communityResolvers = {
       if (!questionId && !userId) throw new Error("At least one of the QuestionId and UserId must be present");
 
       const filterOptions = {};
-      if (questionId) filterOptions.questionId = questionId;
-      if (userId) filterOptions.authorId = userId;
+      if (questionId) filterOptions.questionId = mapIds(questionId);
+      if (userId) filterOptions.authorId = mapIds(userId);
 
       return await pagingQuery(Answer, pageOptions, filterOptions, [
         { path: 'authorId', model: MODEL_USER },
