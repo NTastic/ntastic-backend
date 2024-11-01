@@ -52,10 +52,10 @@ const communityResolvers = {
           filterOptions.tagIds = { $in: tagObjectIds };
         }
       }
-      if (userId) filterOptions.authorId = userId;
+      if (userId) filterOptions.authorId = mapIds(userId);
       return await pagingQuery(Question, pageOptions, filterOptions, [
-        { path: 'authorId', model: MODEL_USER },
-        { path: 'tagIds', model: MODEL_TAG },
+        { path: 'authorId', localField: 'authorId', foreignField: "_id", model: MODEL_USER, as: "user" },
+        { path: 'tagIds', localField: 'tagIds', foreignField: "_id", model: MODEL_TAG, as: "tags" },
       ]);
     },
 
@@ -71,7 +71,7 @@ const communityResolvers = {
       if (userId) filterOptions.authorId = mapIds(userId);
 
       return await pagingQuery(Answer, pageOptions, filterOptions, [
-        { path: 'authorId', model: MODEL_USER },
+        { path: 'authorId', localField: 'authorId', foreignField: "_id", model: MODEL_USER, as: "user" },
       ]);
     },
   },
