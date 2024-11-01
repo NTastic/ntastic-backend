@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, select: false },
   phone: { type: String },
-  description: { type: String},
+  description: { type: String },
   isBot: { type: Boolean, default: false },
   avatarId: { type: mongoose.Schema.Types.ObjectId, ref: IMAGES_FILES },
   storageUsed: { type: Number, default: 0 },

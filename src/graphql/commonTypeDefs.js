@@ -98,11 +98,15 @@ const commonTypeDefs = gql`
     data: Object
   }
 
+  input SortOption {
+    field: String
+    order: SortOrder
+  }
+
   input PageOptions {
     page: Int
     limit: Int
-    sortField: String
-    order: SortOrder
+    sortOpts: [SortOption!]
   }
 
   input UserInput {

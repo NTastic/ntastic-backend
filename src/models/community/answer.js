@@ -18,5 +18,5 @@ const AnswerSchema = new mongoose.Schema({
 
 AnswerSchema.index({ questionId: 1 });
 
-const Answer = mongoose.model(MODEL_ANSWER, AnswerSchema)
+const Answer = mongoose.model(MODEL_ANSWER, AnswerSchema);
 export default Answer;

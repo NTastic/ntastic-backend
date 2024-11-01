@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
-import { Category, Recommendation, POI, Comment, User, MODEL_POI } from '../models/index.js';
-import { makeResponse, pagingQuery } from '../utils/graphqlHelper.js';
+import { Category, Recommendation, POI, Comment, User } from '../models/index.js';
+import { makeResponse, mapIds, pagingQuery } from '../utils/graphqlHelper.js';
 import { arraysEqual, nonEmptyArray } from '../utils/common.js';
 import { validateUser } from '../utils/user.js';
 
@@ -24,9 +24,29 @@ const poiResolvers = {
       if (!recommendation) throw new Error('Recommendation not found');
       return recommendation;
     },
-    getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
+    getRecommendations: async (_, { catIds, catMatch = 'ANY', pageOptions,
+      location = { near: { latitude: -12.4608987, longitude: 130.8360045 }, maxDistance: 100_000 } }) => {
       let filterOptions = {};
+
+      // Build the $geoNear stage
+      const geoNearStage = {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [location.near.longitude, location.near.latitude],
+          },
+          distanceField: 'distance', // Name of the field to store calculated distance
+          spherical: true,
+          key: 'poi.location',
+          // Only include documents within the specified maxDistance
+          ...(location.maxDistance > 0 && { maxDistance: location.maxDistance }),
+        },
+      };
+      // Add the $geoNear stage to filterOptions
+      filterOptions.$geoNear = geoNearStage;
+
       if (nonEmptyArray(catIds)) {
+        catIds = mapIds(catIds);
         if (catMatch === 'ALL') {
           filterOptions.catIds = { $all: catIds };
         } else {
@@ -43,9 +63,25 @@ const poiResolvers = {
       return poi;
     },
 
-    getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions }) => {
+    getPOIs: async (_, { catIds, catMatch = 'ANY', pageOptions,
+      location = { near: { latitude: -12.4608987, longitude: 130.8360045 }, maxDistance: 100_000 } }) => {
       let filterOptions = {};
+      const geoNearStage = {
+        $geoNear: {
+          near: {
+            type: 'Point',
+            coordinates: [location.near.longitude, location.near.latitude],
+          },
+          distanceField: 'distance',
+          spherical: true,
+          key: 'location',
+          ...(location.maxDistance > 0 && { maxDistance: location.maxDistance }),
+        },
+      };
+      filterOptions.$geoNear = geoNearStage;
+
       if (nonEmptyArray(catIds)) {
+        catIds = mapIds(catIds);
         if (catMatch === 'ALL') {
           filterOptions.catIds = { $all: catIds };
         } else {
@@ -57,24 +93,24 @@ const poiResolvers = {
 
     getComments: async (_, { poiId, pageOptions }) => {
       if (!poiId) throw new Error("poiId must be present");
-      const filterOptions = { poiId: poiId };
+      const filterOptions = { poiId: mapIds(poiId) };
       return await pagingQuery(Comment, pageOptions, filterOptions);
     },
   },
   Mutation: {
     createRecommendation: async (_, { input }, { userId }) => {
       await validateUser(userId);
-      const { title, description, commentIds } = input;
-      if (!nonEmptyArray(commentIds)) throw new Error('CommentIds mush be present');
-      const comments = await Comment.find({ _id: { $in: commentIds } });
-      const poiIds = comments.map((comment) => comment.poiId);
-      const pois = await POI.find({ _id: { $in: poiIds } });
-      const catIds = Array.from(new Set(pois.map((poi) => poi.catIds)));
+      const { title, description, commentId } = input;
+      if (!ObjectId.isValid(commentId)) throw new Error('CommentId mush be present');
+      const comment = await Comment.findById(commentId);
+      if (!comment) throw new Error("Comment not found");
+      const poi = await POI.findById(comment.poiId);
+      if (!poi) throw new Error("POI not found");
       const recommendation = await Recommendation({
         title,
         description,
-        catIds,
-        list: comments.map((value) => ({ poiId: value.poiId, commentId: value._id })),
+        poi,
+        comment,
       }).save();
 
       return recommendation;
@@ -83,19 +119,18 @@ const poiResolvers = {
       await validateUser(userId);
       const recommendation = await Recommendation.findById(id);
       if (!recommendation) throw new Error('Recommendation not found');
-      const { title, description, commentIds } = input;
+      const { title, description, commentId } = input;
+
       recommendation.title = title || recommendation.title;
       recommendation.description = description || recommendation.description;
-      if (nonEmptyArray(commentIds)) {
-        const oldCommentIds = recommendation.list.map((data) => data.commentId);
-        if (!arraysEqual(oldCommentIds, commentIds)) {
-          const comments = await Comment.find({ _id: { $in: commentIds } });
-          const poiIds = comments.map((comment) => comment.poiId);
-          const pois = await POI.find({ _id: { $in: poiIds } });
-          const catIds = Array.from(new Set(pois.map((poi) => poi.catIds)));
-          recommendation.catIds = catIds;
-          recommendation.list = comments.map((value) => ({ poiId: value.poiId, commentId: value.id }));
-        }
+      if (commentId && ObjectId.isValid(commentId) && recommendation.comment.id != commentId) {
+        const comment = await Comment.findById(commentId);
+        if (!comment) throw new Error("Comment not found");
+        const poi = await POI.findById(comment.poiId);
+        if (!poi) throw new Error("POI not found");
+
+        recommendation.comment = comment;
+        recommendation.poi = poi;
       }
       return await recommendation.save();
     },
@@ -344,17 +379,8 @@ const poiResolvers = {
     subCats: async (cat) => await Category.find({ parentCatId: cat.id }),
   },
   Recommendation: {
-    list: async (parent) => {
-      const ids = parent.list;
-      return await Promise.all(
-        parent.list.map(async data => {
-          return {
-            poi: await POI.findById(data.poiId),
-            comment: await Comment.findById(data.commentId)
-          };
-        })
-      );
-    },
+    title: (parent) => parent.comment.content,
+    photoUrls: (parent) => [...(parent.comment.imageUrls || []), ...(parent.poi.photoUrls || []),],
   },
   Comment: {
     author: async (comment) => {

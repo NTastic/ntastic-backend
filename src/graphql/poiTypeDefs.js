@@ -43,17 +43,14 @@ const poiTypeDefs = gql`
     updatedAt: Date
   }
 
-  type RecommendPOI {
-    poi: POI
-    comment: Comment
-  }
   type Recommendation {
     id: ID!
     title: String!
     description: String
     catIds: [ID!]
     photoUrls: [String!]
-    list: [RecommendPOI!]
+    poi: POI
+    comment: Comment
     votes: VoteCount!
   }
 
@@ -79,6 +76,11 @@ const poiTypeDefs = gql`
     longitude: Float!
   }
 
+  input LocationFilter {
+    near: LocationInput
+    maxDistance: Int = 10000000
+  }
+
   input WorkingHourInput {
     day: String
     time: String
@@ -87,7 +89,7 @@ const poiTypeDefs = gql`
   input RecommendationInput {
     title: String!
     description: String
-    commentIds: [ID!]
+    commentId: ID!
   }
 
   input POIInput {
@@ -115,6 +117,7 @@ const poiTypeDefs = gql`
       catIds: [ID!]
       catMatch: MatchType = ANY
       pageOptions: PageOptions
+      location: LocationFilter
     ): Pagination!
     getRecommendation(id: ID!): Recommendation
 
@@ -122,6 +125,7 @@ const poiTypeDefs = gql`
       catIds: [ID!]
       catMatch: MatchType = ANY
       pageOptions: PageOptions
+      location: LocationFilter
     ): Pagination!
     getPOI(id: ID!): POI
     getComments(

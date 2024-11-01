@@ -3,7 +3,7 @@ import { MODEL_POI } from './poi.js';
 import { MODEL_USER } from '../common/user.js';
 
 export const MODEL_COMMENT = 'poi.Comment';
-const CommentSchema = new mongoose.Schema({
+export const CommentSchema = new mongoose.Schema({
   poiId: { type: mongoose.Schema.Types.ObjectId, ref: MODEL_POI, required: true },
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: MODEL_USER, required: true },
   content: { type: String, required: true },
@@ -18,5 +18,5 @@ const CommentSchema = new mongoose.Schema({
 CommentSchema.index({ poiId: 1 });
 CommentSchema.index({ authorId: 1 });
 
-const Comment = mongoose.model(MODEL_COMMENT, CommentSchema)
+const Comment = mongoose.model(MODEL_COMMENT, CommentSchema);
 export default Comment;
