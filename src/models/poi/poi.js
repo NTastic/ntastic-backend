@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { MODEL_CATEGORY } from './category.js';
 
 export const MODEL_POI = 'poi.POI';
-const PoiSchema = new mongoose.Schema({
+export const PoiSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: { type: String },
   address: { type: String },
@@ -29,5 +29,5 @@ const PoiSchema = new mongoose.Schema({
 
 PoiSchema.index({ location: '2dsphere' });
 
-const POI = mongoose.model(MODEL_POI, PoiSchema)
+const POI = mongoose.model(MODEL_POI, PoiSchema);
 export default POI;

@@ -43,17 +43,14 @@ const poiTypeDefs = gql`
     updatedAt: Date
   }
 
-  type RecommendPOI {
-    poi: POI
-    comment: Comment
-  }
   type Recommendation {
     id: ID!
     title: String!
     description: String
     catIds: [ID!]
     photoUrls: [String!]
-    list: [RecommendPOI!]
+    poi: POI
+    comment: Comment
     votes: VoteCount!
   }
 
@@ -87,7 +84,7 @@ const poiTypeDefs = gql`
   input RecommendationInput {
     title: String!
     description: String
-    commentIds: [ID!]
+    commentId: ID!
   }
 
   input POIInput {

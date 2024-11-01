@@ -1,8 +1,9 @@
 export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, populate = []) => {
-  const { page = 1, limit = 10, sortField = 'createdAt', order = 'ASC' } = pageOptions;
-  const sortOrder = order === 'ASC' ? 1 : -1;
-  const sortOptions = { [sortField]: sortOrder };
-
+  const { page = 1, limit = 10, sortOpts = [{ field: 'createdAt', order: 'ASC' }], } = pageOptions;
+  const sortOptions = {};
+  for (const sort of sortOpts) {
+    sortOptions[sort.field] = sort.order === 'ASC' ? 1 : -1;
+  }
   const skip = (page - 1) * limit;
   const totalItems = await model.countDocuments(filterOptions);
   const totalPages = Math.ceil(totalItems / limit);
