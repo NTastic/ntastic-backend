@@ -12,6 +12,7 @@ export const pagingQuery = async (model, pageOptions = {}, filterOptions = {}, p
   // Build sort options for the aggregation pipeline
   const sortOptions = {};
   for (const sort of sortOpts) {
+    if (filterOptions.$geoNear && sort.field === 'createdAt') continue;
     sortOptions[sort.field] = sort.order === 'ASC' ? 1 : -1;
   }
 
