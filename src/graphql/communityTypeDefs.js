@@ -16,7 +16,7 @@ const communityTypeDefs = gql`
   type Question {
     id: ID!
     title: String!
-    content: String!
+    content: String
     imageIds: [ID!]
     images: [String]
     externalImageUrls: [String]
@@ -109,8 +109,8 @@ const communityTypeDefs = gql`
 
     createQuestion(
       title: String!,
-      content: String!,
-      tagIds: [ID!]!,
+      content: String,
+      tagIds: [ID!],
       imageIds: [ID!],
       externalImageUrls: [String!]
     ): Question
