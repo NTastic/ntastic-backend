@@ -1,5 +1,6 @@
 import { User, Tag, Question, Answer } from '../models/index.js';
 import aiAnswerQueue from '../jobs/aiAnswer.js';
+import aiTagQueue from '../jobs/aiTagQuestion.js';
 import mongoose from 'mongoose';
 import { pagingQuery, makeResponse, mapIds } from '../utils/graphqlHelper.js';
 import { getBaseUrl, validateUrls } from '../utils/url.js';
@@ -171,16 +172,7 @@ const communityResolvers = {
 
     createQuestion: async (_, { title, content, tagIds, imageIds, externalImageUrls }, { userId }) => {
       await validateUser(userId);
-
-      if (!tagIds || tagIds.length === 0) {
-        throw new Error('At least one tag is required');
-      }
-
-      const tags = await Tag.find({ _id: { $in: tagIds } });
-      if (tags.length !== tagIds.length) {
-        throw new Error('Invalid tag IDs');
-      }
-
+      
       if (nonEmptyArray(externalImageUrls)) {
         validateUrls(externalImageUrls);
       }
@@ -196,11 +188,11 @@ const communityResolvers = {
 
       const savedQuestion = await question.save();
 
-      await Tag.updateMany(
-        { _id: { $in: savedQuestion.tagIds } },
-        { $inc: { questionCount: 1 } }
-      );
-
+      // add to ai labelizing queue
+      await aiTagQueue.add({ questionId: savedQuestion._id }, {
+        attempts: JOB_ATTEMPTS,
+        backoff: JOB_BACKOFF,
+      });
       // add to ai answer queue
       await aiAnswerQueue.add({ questionId: savedQuestion._id }, {
         attempts: JOB_ATTEMPTS,

@@ -20,7 +20,8 @@ const aiAnswerQueue = new Bull('ai-answer-queue', {
 
 const openai = new OpenAI();
 
-const SYSTEM_CONTENT = process.env.OPENAI_SYSTEM_PROMPT || "No more than 100 words for each response.";
+const SYSTEM_CONTENT = process.env.OPENAI_SYSTEM_PROMPT;
+if (!SYSTEM_CONTENT) throw new Error("PROMPT not found");
 
 aiAnswerQueue.process(async (job) => {
   const { questionId } = job.data;
@@ -72,12 +73,12 @@ aiAnswerQueue.process(async (job) => {
 
 // listening for job completion
 aiAnswerQueue.on('completed', (job, result) => {
-  console.log(`Job ${job.id} has completed. Question ID: ${job.data.questionId}`);
+  console.log(`Answer Job ${job.id} has completed. Question ID: ${job.data.questionId}`);
 });
 
 // listening for job fail
 aiAnswerQueue.on('failed', (job, err) => {
-  console.error(`Job ${job.id} failed:`, err);
+  console.error(`Answer Job ${job.id} failed:`, err);
 });
 
 aiAnswerQueue.on('error', (error) => {

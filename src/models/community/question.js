@@ -6,9 +6,9 @@ import { IMAGES_FILES } from '../../gridfs.js';
 export const MODEL_QUESTION = 'community.Question';
 const QuestionSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  content: { type: String, required: true },
+  content: { type: String },
   authorId: { type: mongoose.Schema.Types.ObjectId, ref: MODEL_USER, required: true },
-  tagIds: [{ type: mongoose.Schema.Types.ObjectId, ref: MODEL_TAG, required: true }],
+  tagIds: [{ type: mongoose.Schema.Types.ObjectId, ref: MODEL_TAG }],
   imageIds: [{ type: mongoose.Schema.Types.ObjectId, ref: IMAGES_FILES }],
   externalImageUrls: [{ type: String }],
   votes: {
@@ -17,9 +17,9 @@ const QuestionSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-QuestionSchema.path('tagIds').validate(function (value) {
-  return value.length > 0;
-}, 'Question must have at least one MODEL_TAG.');
+// QuestionSchema.path('tagIds').validate(function (value) {
+//   return value.length > 0;
+// }, 'Question must have at least one MODEL_TAG.');
 
 // indexing tagIds
 QuestionSchema.index({ tagIds: 1 });

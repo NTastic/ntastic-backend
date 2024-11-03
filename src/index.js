@@ -19,6 +19,7 @@ import { connectDB } from './gridfs.js';
 import { imagesEndpoint } from './utils/image.js';
 
 import aiAnswerQueue from './jobs/aiAnswer.js';
+import aiTagQueue from './jobs/aiTagQuestion.js';
 
 const { ObjectId } = mongoose.Types;
 
